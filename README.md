@@ -1,4 +1,4 @@
 TopoCluster
 ===========
 
-A geostatistical based approach to doing Toponym Resolution
+A geostatistical based approach to describing lexical variation and performing  Toponym Resolution.
