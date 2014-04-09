@@ -16,12 +16,12 @@ class Document:
         self.userID = ID
         self.userLat = latit
         self.userLong = longit
-        self.Feature_Freq = F_Freq
-        self.fileFrom = file_from
+        #self.Feature_Freq = F_Freq
+        #self.fileFrom = file_from
         
     
 
-def Load(tf, tbl_name, conn_info):
+def Load(tf, tbl_name, conn_info, traintype):
 
     #Connecting to Database
     conn = psycopg2.connect(conn_info)
@@ -47,11 +47,16 @@ def Load(tf, tbl_name, conn_info):
             #print userID, latit, longit
             try:
                 row = person.strip().split('\t')
-                #print row[0]
-                userID = row[0]
-                latit = row[1].split(',')[0]
-                longit = row[1].split(',')[1]
-
+                if traintype == "twitter":
+                    #print row[0]
+                    userID = row[0]
+                    latit = row[1].split(',')[0]
+                    longit = row[1].split(',')[1]
+                elif traintype == "wiki":
+                    userID = row[0]
+                    page_name = row[1]
+                    latit = row[2].split(',')[0]
+                    longit = row[2].split(',')[1]
                 newDocument = Document(userID, latit, longit, filename)
                 docList.append(newDocument)
             except:
