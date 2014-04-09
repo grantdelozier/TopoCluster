@@ -12,7 +12,7 @@ This application also has package dependencies. It is assumed that psycopg2 is i
 Modes
 =====
 
-## Load Database with Document Geographies
+### Load Database with Document Geographies
 ```
 python TopoCluster.py -mode loadDB -tf /directory/wikipedia_training.data.txt -traintype wiki -dtbl wikipedia_geography -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
