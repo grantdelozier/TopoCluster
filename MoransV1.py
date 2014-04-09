@@ -2,6 +2,8 @@ import psycopg2
 import datetime
 import io
 
+from collections import Counter
+
 class Document:
 
     userID = ""
@@ -32,7 +34,11 @@ class Document:
     #        F_Prob[word] = (float(F_Freq[word])/float(total_words))
     #    self.Feature_Prob = F_Prob
 
-def calc(f, dtbl, gtbl, conn, outf):
+def updateInPlace(a,b):
+    a.update(b)
+    return a
+
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist):
     
     filename = f[f.rfind('/')+1:]
     print filename
@@ -43,6 +49,10 @@ def calc(f, dtbl, gtbl, conn, outf):
     F_All = set()
 
     read_time_begin = datetime.datetime.now()
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success"
 
     #Read in the trainfile data/calc word frequencies
     with io.open(f, 'r', encoding='utf-8') as f:
@@ -83,10 +93,28 @@ def calc(f, dtbl, gtbl, conn, outf):
     read_time_end = datetime.datetime.now()
     print read_time_end - read_time_begin
 
-    #Aggregate Language Models in grid
-    #import KernelFunctionsV1 as KF
+    print "Number of Documents:", len(docDict)
 
-    #grid = 
+    #Aggregate Language Models in grid
+    import KernelFunctionsV1 as KF
+    cur = conn.cursor()
+    #Fetch all points in our grid
+    SQL_fetchgrid = "SELECT gid from %s;" % (gtbl, )
+    cur.execute(SQL_fetchgrid)
+    grid = cur.fetchall()
+    #Find all content Documents for each grid point
+    gid_dict = {}
+    for u in grid:
+        #A uniform kernel search is called here.
+        #In the future should add a kern_type argument and handle other functions
+        docs = KF.uniform(dtbl, u, agg_dist, cur, gtbl)
+        if len(docs) > 0:
+            gid_dict[u] = reduce(updateInPlace, (Counter(docDict[x].F_Freq) for x in docs))
+
+    print "Number of points in the grid:", len(gid_dict)
+        
+
+    conn.close()
     
     
     
