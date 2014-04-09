@@ -8,6 +8,8 @@ class Document:
     userLat = ""
     userLong = ""
 
+    fileFrom = ""
+
     Feature_Freq = {}
     total_words = 0
     #Feature_Prob = {}
@@ -17,7 +19,7 @@ class Document:
         self.userLat = latit
         self.userLong = longit
         #self.Feature_Freq = F_Freq
-        #self.fileFrom = file_from
+        self.fileFrom = file_from
         
     
 
@@ -73,20 +75,22 @@ def Load(tf, tbl_name, conn_info, traintype):
     read_time_end = datetime.datetime.now()
     print read_time_end - read_time_begin
 
-        cur = conn.cursor()
+    cur = conn.cursor()
 
-    cur.execute("CREATE TABLE IF NOT EXISTS %s (uid varchar(20) primary key, latit float, longit float, coord geometry(Point, 4326), filefrom varchar(50));" % (tbl_name, ))
+    cur.execute("CREATE TABLE IF NOT EXISTS %s (uid varchar(20) primary key, latit float, longit float, geog Geography(Point, 4326), filefrom varchar(50));" % (tbl_name, ))
 
     cur.execute("DELETE FROM %s" % tbl_name)
+
+    print "Inserting points to dtbl"
    
     for p in docList:
-        SQL1 = "INSERT INTO %s VALUES (%s, %s, %s, ST_GeomFromText('POINT(%s %s)', 4326), %s);" % (tbl_name, '%s', '%s', '%s', '%s', '%s', '%s')
+        SQL1 = "INSERT INTO %s VALUES (%s, %s, %s, ST_GeographyFromText('SRID=4326;POINT(%s %s)'), %s);" % (tbl_name, '%s', '%s', '%s', '%s', '%s', '%s')
         data = (p.userID, float(p.userLat), float(p.userLong), float(p.userLong), float(p.userLat), p.fileFrom)
         cur.execute(SQL1, data)
 
     conn.commit()
     conn.close()
 
-    print "Number of people loaded: ", len(docList)
+    print "Number of documents loaded: ", len(docList)
 
     print "Done Loading ", tbl_name
