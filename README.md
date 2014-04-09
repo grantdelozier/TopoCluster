@@ -12,14 +12,14 @@ This application also has package dependencies. It is assumed that psycopg2 is i
 Modes
 =====
 
-Load Database with Document Geographies
+## Load Database with Document Geographies
 ```
 python TopoCluster.py -mode loadDB -tf /directory/wikipedia_training.data.txt -traintype wiki -dtbl wikipedia_geography -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
 
 Argument Explanation:
--tf (accepts a string that points to a training file, it should have schema like the sample training data provided with this repository)
--traintype (accepts wiki or twitter as arguments. these datasets have slightly different schema so this is necessary)
--dtbl (name of the table that will be created in ones DB. upper case letters and spaces should not be used. if the table name already exists in the DB its contents will be erased prior to row insertion)
--conn (a string corresponding to psycopg2 connection information. In the future this argument will be removed altogether in favor of a .config file with this information)
+* -tf (accepts a string that points to a training file, it should have schema like the sample training data provided with this repository)
+* -traintype (accepts wiki or twitter as arguments. these datasets have slightly different schema so this is necessary)
+* -dtbl (name of the table that will be created in ones DB. upper case letters and spaces should not be used. if the table name already exists in the DB its contents will be erased prior to row insertion)
+* -conn (a string corresponding to psycopg2 connection information. In the future this argument will be removed altogether in favor of a .config file with this information)
 
