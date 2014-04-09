@@ -13,9 +13,9 @@ Modes
 =====
 
 Load Database with Document Geographies
-'''
+```
 python TopoCluster.py -mode loadDB -tf /directory/wikipedia_training.data.txt -traintype wiki -dtbl wikipedia_geography -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
-'''
+```
 
 Argument Explanation:
 -tf (accepts a string that points to a training file, it should have schema like the sample training data provided with this repository)
