@@ -69,7 +69,7 @@ def get_random_gid_dict(gid_dict):
     z = 0
     rand_dict_len = len(rand_dict)
     rand_ref = {}
-    for ke in rand_dict
+    for ke in rand_dict:
         rand_ref[z] = ke
         z +=1
 
