@@ -117,6 +117,9 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
         print "Num neighbors: ", len(neighbors)
+        s1 = set([x[0] for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+        print s3
         m = m + 1
         x = 1
         for ui in neighbors:
@@ -139,8 +142,8 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         if m % 10 == 0:
             print "Left to go: ", len(gid_dict) - m
             #print sum_vectors
-            print numerator.sum(axis=0)
-            print denom.sum(axis=0)
+            #print numerator.sum(axis=0)
+            #print denom.sum(axis=0)
             print sum_vectors.sum(axis=0)
             print datetime.datetime.now()
 
