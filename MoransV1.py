@@ -116,10 +116,10 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
-        print "Num neighbors: ", len(neighbors)
-        s1 = set([str(x[0]) for x in neighbors])
-        s3 = s1 & set(gid_dict.keys())
-        print s3
+        #print "Num neighbors: ", len(neighbors)
+        #s1 = set([str(x[0]) for x in neighbors])
+        #s3 = s1 & set(gid_dict.keys())
+        #print s3
         m = m + 1
         x = 1
         for ui in neighbors:
@@ -139,12 +139,12 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
                 div_vector = numpy.divide(numerator, denom)
                 
                 sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
-        if m % 10 == 0:
+        if m % 50 == 0:
             print "Left to go: ", len(gid_dict) - m
             #print sum_vectors
             #print numerator.sum(axis=0)
             #print denom.sum(axis=0)
-            print sum_vectors.sum(axis=0)
+            #print sum_vectors.sum(axis=0)
             print datetime.datetime.now()
 
     i = 0
