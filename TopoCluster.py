@@ -116,8 +116,9 @@ if len(sys.argv) >= 3:
         #Use aggregated LM
         #Defaults to false if not provided
         try:
-            if "-write_agg_lm" in args and args[args.index('-write_agg_lm')+1] != False:
+            if "-write_agg_lm" in args and args[args.index('-write_agg_lm')+1] != "False":
                 write_agg_lm = True
+            else: write_agg_lm = False
         except:
             print "You did not provide a write aggregate option, defaulting to false"
             write_agg_lm = False

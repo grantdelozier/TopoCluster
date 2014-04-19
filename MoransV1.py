@@ -21,15 +21,16 @@ class Document:
     outside_word_prob = 0
     fileFrom = ""
 
-    def __init__(self, ID, latit, longit, F_Freq, file_from):
+    def __init__(self, ID, latit, longit, F_Freq, file_from, aggLM=False):
         self.userID = ID
         self.userLat = latit
         self.userLong = longit
         self.Feature_Freq = F_Freq
         self.fileFrom = file_from
         tw = 0
-        for f in F_Freq:
-            tw += int(F_Freq[f])
+        if aggLM == False:
+            for f in F_Freq:
+                tw += int(F_Freq[f])
         self.total_words = tw
         #self.CalcUnigramProb(self, F_Freq)
 
@@ -198,31 +199,35 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         for person in f:
             #print "####NEW Person####"
             #print userID, latit, longit
-            try:
-                row = person.strip().split('\t')
-                #print row[0]
+            #try:
+            row = person.strip().split('\t')
+            #print row[0]
 
-                if traintype == "twitter":
-                    #print row[0]
-                    userID = row[0]
-                    latit = row[1].split(',')[0]
-                    longit = row[1].split(',')[1]
-                    F_Freq = dict(f.split(':') for f in row[2].split(" "))
-                elif traintype == "wiki":
-                    userID = row[0]
-                    page_name = row[1]
-                    latit = row[2].split(',')[0]
-                    longit = row[2].split(',')[1]
+            if traintype == "twitter":
+                #print row[0]
+                userID = row[0]
+                latit = row[1].split(',')[0]
+                longit = row[1].split(',')[1]
+                F_Freq = dict(f.split(':') for f in row[2].split(" "))
+            elif traintype == "wiki":
+                userID = row[0]
+                page_name = row[1]
+                latit = row[2].split(',')[0]
+                longit = row[2].split(',')[1]
+                if UseAggLMs == False:
                     F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                
-                F_All |= set(F_Freq.keys())
-                newDoc = Document(userID, latit, longit, F_Freq, filename)
-                docDict[userID] = newDoc
-            except:
+                else:
+                    F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[9].split(" "))
+
+            
+            F_All |= set(F_Freq.keys())
+            newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+            docDict[userID] = newDoc
+            '''except:
                 print "@@@@@error reading user@@@@@@"
                 print row
                 print z
-                break
+                break'''
             z += 1
             if z % 5000 == 0:
                 print z
@@ -261,6 +266,11 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #print docs[0][0]
                 gid_totalwords[u[0]] = sum([docDict[x[0]].total_words for x in docs])
                 gid_dict[u[0]] = reduce(updateInPlace, (Counter(docDict[x[0]].Feature_Freq) for x in docs))
+                #s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[u[0]].items()]
+                #print s1
+                #s2 = str.join('', s1)
+                #print s2
+                #print "#############"
                 gid_lat_long_ref[u[0]] = [u[1], u[2]]
                 #except:
                 #    for g in docs:
@@ -289,18 +299,26 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         for wd in means_dict:
             means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
 
+        print "Done Calculating Means"
+
         #If option is set, write the grid aggregated documents to a file (can speed up subsequent loads if multiple calcs done on same file)
         #The output here can be read in as a train file and previous steps can be skipped for future loads.
         if writeAggLMs==True:
             openw = io.open(writeAggFile, 'w', encoding='utf-8')
             #cur.execute("SELECT gid,  FROM ")
             for i in gid_dict:
-                s1 = [str.join('', [' ', k, ':', unicode(v)])for k,v in mc_dict[mc].items()]
-                s2 = ""
-                s2.join(s1)
-                lat_long = gid_lat_long_ref[mc][0]+','+gid_lat_long_ref[mc][1]
-                openw.write(i + '\t' + lat_long + '\t' + s2 + '\r\n')
+                s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[i].items()]
+                #print s1
+                s2 = str.join('', s1)
+                #s2 = ""
+                #s2.join(s1)
+                #print s2
+                lat_long = unicode(gid_lat_long_ref[i][0])+','+unicode(gid_lat_long_ref[i][1])
+                openw.write(unicode(i) + '\t' + lat_long + '\t' + unicode(s2.strip()) + '\r\n')
             openw.close()
+
+    print "Done writing to file"
+    sys.exit()
 
     if UseAggLMs == True:
         cur = conn.cursor()
