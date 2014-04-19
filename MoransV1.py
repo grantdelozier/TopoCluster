@@ -208,7 +208,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                     userID = row[0]
                     latit = row[1].split(',')[0]
                     longit = row[1].split(',')[1]
-                    if UseAggLMs == False
+                    if UseAggLMs == False:
                         F_Freq = dict(f.split(':') for f in row[2].split(" "))
                         F_All |= set(F_Freq.keys())
                         newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
