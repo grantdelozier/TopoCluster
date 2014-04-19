@@ -316,8 +316,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 lat_long = unicode(gid_lat_long_ref[i][0])+','+unicode(gid_lat_long_ref[i][1])
                 openw.write(unicode(i) + '\t' + lat_long + '\t' + unicode(s2.strip()) + '\r\n')
             openw.close()
-
-       print "Done writing to file"
+            print "Done writing to file"
     #sys.exit()
 
     if UseAggLMs == True:
