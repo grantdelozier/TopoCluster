@@ -346,8 +346,10 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
     wf = open(outf, 'w')
     for mc in mc_dict:
-
-        wf.write(unicode(mc) + '\t' + unicode(mc_dict[mc]) + '\r\n')
+        try:
+            wf.write(unicode(mc, 'utf-8') + '\t' + unicode(mc_dict[mc], 'utf-8') + '\r\n')
+        except:
+            print "problem writing string", mc, mc_dict
 
     wf.close()
 
