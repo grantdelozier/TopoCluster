@@ -116,6 +116,7 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
+        print "Num neighbors: ", len(neighbors)
         m = m + 1
         x = 1
         for ui in neighbors:
