@@ -9,6 +9,8 @@ from collections import Counter
 
 import KernelFunctionsV1 as KF
 
+import operator
+
 class Document:
 
     userID = ""
@@ -338,15 +340,15 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         means_dict = {}
         word_freqs = {}
 
-        testw = io.open('test_write.txt', 'w', encoding='utf-8')
+        #testw = io.open('test_write.txt', 'w', encoding='utf-8')
         
         for i in gid_dict:
             for w in gid_dict[i]:
                 #Mean Unigram Prob among all points in grid
-                testw.write(w + '\t' + str(gid_dict[i][w]) + '\r\n')
+                #testw.write(w + '\t' + str(gid_dict[i][w]) + '\r\n')
                 means_dict[w] = means_dict.get(w, 0) + gid_dict[i][w]
                 word_freqs[w] = word_freqs.get(w, 0) + 1
-        testw.close()
+        #testw.close()
         for wd in means_dict:
             means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
         print "Done obtaining means probs"
@@ -360,9 +362,10 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
     wf = open(outf, 'w')
-    for mc in mc_dict:
+    sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter=(1), reverse=True)
+    for mc in sorted_mc_dict:
         try:
-            wf.write(unicode(mc, 'utf-8') + '\t' + str(word_freqs[w]) + '\t' + str(mc_dict[mc]) + '\r\n')
+            wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
         except:
             print "problem writing string", mc, mc_dict[mc]
 
