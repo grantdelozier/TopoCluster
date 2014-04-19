@@ -117,13 +117,13 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
         print "Num neighbors: ", len(neighbors)
-        s1 = set([x[0] for x in neighbors])
+        s1 = set([str(x[0]) for x in neighbors])
         s3 = s1 & set(gid_dict.keys())
         print s3
         m = m + 1
         x = 1
         for ui in neighbors:
-            gid = ui[0]
+            gid = str(ui[0])
             if gid in gid_dict:
                             
                 w = float(ui[1])
