@@ -11,6 +11,8 @@ import KernelFunctionsV1 as KF
 
 import operator
 
+import random
+
 class Document:
 
     userID = ""
@@ -61,6 +63,40 @@ def buildRef(adict):
         dict_ref2[x] = w
         x += 1
     return dict_ref, dict_ref2
+
+def get_random_gid_dict(gid_dict):
+    rand_dict = {k:{} for k in gid_dict.keys()}
+    z = 0
+    rand_dict_len = len(rand_dict)
+    rand_ref = {}
+    for ke in rand_dict
+        rand_ref[z] = ke
+        z +=1
+
+    for u in gid_dict:
+        for w in gid_dict[u]:
+            found = False
+            while found = False:
+                randsel = random.randindt(0, rand_dict_len-1)
+                if w not in rand_dict[randsel]:
+                    rand_dict[randsel][w] = gid_dict[u][w]
+                    found = True
+    return rand_dict
+
+        
+
+def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
+    i = 0
+    mc_word_list = {}
+    while i <= iterations: 
+        random_gid_dict = get_random_gid_dict(gid_dict)
+        
+        mc_dict2 = MoransCalc(random_gid_dict, gtbl, means_dict, kern_dist, cur)
+        for w in mc_dict2:
+            mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict2[w])
+        i += 1
+    return mc_word_list
+    
         
 
 def MoransCalc(gid_dict, gtbl, means_dict, kern_dist, cur):
@@ -124,6 +160,9 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #print s3
         m = m + 1
         x = 1
+        N = float(1)/float(len(gid_dict))
+        if len(neighbors) == 0:
+            pass
         for ui in neighbors:
             gid = str(ui[0])
             if gid in gid_dict:
@@ -136,7 +175,7 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
                             
                 numerator = w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector ))
                             
-                denom = numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
+                denom = numpy.multiply(N, numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector )))
                             
                 div_vector = numpy.divide(numerator, denom)
                 
@@ -156,19 +195,11 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         
     return morans_c
         
-    
-                
-            
-                
-                
-        
-
-        
             
         
         
 
-def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile):
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test):
 
     print "Morans Calc Parameters:"
     print "Train file: ", f
@@ -361,15 +392,23 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     
     mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
-    wf = open(outf, 'w')
+    wf = io.open(outf, 'w', encoding='utf-8')
     sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
     for mc in sorted_mc_dict:
         try:
             wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
         except:
-            print "problem writing string", mc, mc_dict[mc]
+            print "problem writing string", mc, mc_dict[sorted_mc_dict]
 
     wf.close()
+
+    print "Done writing moran's scores to outfile"
+
+    if sig_test == True:
+        print "Beginning Significance Tests"
+        #Need to parameterize this in the future
+        iterations = 100
+        mc_word_list = MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur) 
 
     #Once the above gets running, need to incorporate significance testing
     #Probably easiest to do this by randomizing the mapping of u's in gid_dict to the probability vectors
