@@ -134,9 +134,10 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
                             
                 div_vector = numpy.divide(numerator, denom)
                 
-                sum_vectors += numpy.where(div_vector==div_vector, div_vector, 0.0)
+                sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
         if m % 20 == 0:
             print "Left to go: ", len(gid_dict) - m
+            print sum_vectors
             print datetime.datetime.now()
 
     i = 0
