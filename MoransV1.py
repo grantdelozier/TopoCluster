@@ -76,7 +76,7 @@ def get_random_gid_dict(gid_dict):
     for u in gid_dict:
         for w in gid_dict[u]:
             found = False
-            while found = False:
+            while found == False:
                 randsel = random.randindt(0, rand_dict_len-1)
                 if w not in rand_dict[randsel]:
                     rand_dict[randsel][w] = gid_dict[u][w]
