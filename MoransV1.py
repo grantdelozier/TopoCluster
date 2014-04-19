@@ -216,13 +216,13 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 longit = row[2].split(',')[1]
                 if UseAggLMs == False:
                     F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                else:
+                    F_All |= set(F_Freq.keys())
+                    newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                    docDict[userID] = newDoc
+                elif UseAggLMs == True:
                     F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[9].split(" "))
+                    docDict[userId] = F_Freq
 
-            
-            F_All |= set(F_Freq.keys())
-            newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
-            docDict[userID] = newDoc
             '''except:
                 print "@@@@@error reading user@@@@@@"
                 print row
