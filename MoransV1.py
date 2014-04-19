@@ -199,35 +199,38 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         for person in f:
             #print "####NEW Person####"
             #print userID, latit, longit
-            #try:
-            row = person.strip().split('\t')
-            #print row[0]
-
-            if traintype == "twitter":
+            try:
+                row = person.strip().split('\t')
                 #print row[0]
-                userID = row[0]
-                latit = row[1].split(',')[0]
-                longit = row[1].split(',')[1]
-                F_Freq = dict(f.split(':') for f in row[2].split(" "))
-            elif traintype == "wiki":
-                userID = row[0]
-                page_name = row[1]
-                latit = row[2].split(',')[0]
-                longit = row[2].split(',')[1]
-                if UseAggLMs == False:
-                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                    F_All |= set(F_Freq.keys())
-                    newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
-                    docDict[userID] = newDoc
-                elif UseAggLMs == True:
-                    F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[9].split(" "))
-                    docDict[userId] = F_Freq
 
-            '''except:
+                if traintype == "twitter":
+                    #print row[0]
+                    userID = row[0]
+                    latit = row[1].split(',')[0]
+                    longit = row[1].split(',')[1]
+                    if UseAggLMs == False
+                        F_Freq = dict(f.split(':') for f in row[2].split(" "))
+                        F_All |= set(F_Freq.keys())
+                        newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                        docDict[userID] = newDoc
+                    elif UseAggLMs == True:
+                        F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
+                        docDict[userID] = F_Freq
+                elif traintype == "wiki":
+                    userID = row[0]
+                    page_name = row[1]
+                    latit = row[2].split(',')[0]
+                    longit = row[2].split(',')[1]
+                    if UseAggLMs == False:
+                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
+                        F_All |= set(F_Freq.keys())
+                        newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                        docDict[userID] = newDoc
+            except:
                 print "@@@@@error reading user@@@@@@"
                 print row
                 print z
-                break'''
+                break
             z += 1
             if z % 5000 == 0:
                 print z
