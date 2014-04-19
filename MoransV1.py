@@ -301,21 +301,21 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         print "Done Calculating Means"
 
-        #If option is set, write the grid aggregated documents to a file (can speed up subsequent loads if multiple calcs done on same file)
-        #The output here can be read in as a train file and previous steps can be skipped for future loads.
-        if writeAggLMs==True:
-            openw = io.open(writeAggFile, 'w', encoding='utf-8')
-            #cur.execute("SELECT gid,  FROM ")
-            for i in gid_dict:
-                s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[i].items()]
-                #print s1
-                s2 = str.join('', s1)
-                #s2 = ""
-                #s2.join(s1)
-                #print s2
-                lat_long = unicode(gid_lat_long_ref[i][0])+','+unicode(gid_lat_long_ref[i][1])
-                openw.write(unicode(i) + '\t' + lat_long + '\t' + unicode(s2.strip()) + '\r\n')
-            openw.close()
+    #If option is set, write the grid aggregated documents to a file (can speed up subsequent loads if multiple calcs done on same file)
+    #The output here can be read in as a train file and previous steps can be skipped for future loads.
+    if writeAggLMs==True:
+        openw = io.open(writeAggFile, 'w', encoding='utf-8')
+        #cur.execute("SELECT gid,  FROM ")
+        for i in gid_dict:
+            s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[i].items()]
+            #print s1
+            s2 = str.join('', s1)
+            #s2 = ""
+            #s2.join(s1)
+            #print s2
+            lat_long = unicode(gid_lat_long_ref[i][0])+','+unicode(gid_lat_long_ref[i][1])
+            openw.write(unicode(i) + '\t' + lat_long + '\t' + unicode(s2.strip()) + '\r\n')
+        openw.close()
 
     print "Done writing to file"
     sys.exit()
