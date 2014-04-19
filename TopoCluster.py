@@ -131,7 +131,15 @@ if len(sys.argv) >= 3:
             print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
             write_agg_file = "tmp.txt"
 
-        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file)
+        try:
+            sig_test = args[args.index('-sig_test')+1]
+            if str(sig_test).lower() != "false":
+                sig_test = True
+        except:
+            print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
+            sig_test = False
+
+        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test)
 
 
     if "-help" in args:
