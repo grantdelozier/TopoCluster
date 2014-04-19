@@ -135,8 +135,8 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
                 div_vector = numpy.divide(numerator, denom)
                 
                 sum_vectors += numpy.where(div_vector==div_vector, div_vector, 0.0)
-        if m % 10 == 0:
-            print m
+        if m % 20 == 0:
+            print "Left to go: ", len(gid_dict) - m
             print datetime.datetime.now()
 
     i = 0
@@ -317,7 +317,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #s2.join(s1)
                 #print s2
                 lat_long = unicode(gid_lat_long_ref[i][0])+','+unicode(gid_lat_long_ref[i][1])
-                openw.write(unicode(i) + '\t' + lat_long + '\t' + unicode(s2.strip()) + '\r\n')
+                openw.write(unicode(i, 'utf-8') + '\t' + unicode(lat_long, 'utf-8') + '\t' + unicode(s2.strip(), 'utf-8') + '\r\n')
             openw.close()
             print "Done writing to file"
     #sys.exit()
@@ -349,7 +349,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         try:
             wf.write(unicode(mc, 'utf-8') + '\t' + unicode(mc_dict[mc], 'utf-8') + '\r\n')
         except:
-            print "problem writing string", mc, mc_dict
+            print "problem writing string", mc, mc_dict[mc]
 
     wf.close()
 
