@@ -362,7 +362,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
     wf = open(outf, 'w')
-    sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter=(1), reverse=True)
+    sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
     for mc in sorted_mc_dict:
         try:
             wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
