@@ -166,9 +166,11 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     #morans_vectors = numpy.zeros((len(mean_vector),1))
     denomsum = numpy.zeros((len(mean_vector),1))
     numerator_sum = numpy.zeros((len(mean_vector),1))
-
-    N = float(1)/float(len(gid_dict))
-
+    
+    #Should N be equal to total size of gid_dict or the number of gid_dict with at least 1 neighbor?
+    #N = float(1)/float(len(gid_dict))
+    N = 0
+    
     for u in gid_dict:
         #For each u, get its neighbors
         #In future add condition for handling other types of kernel functions
@@ -177,6 +179,8 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #print "Num neighbors: ", len(neighbors)
         s1 = set([str(x[0]) for x in neighbors])
         s3 = s1 & set(gid_dict.keys())
+        if len(s3) >0:
+            N += 1
         #print s3
         m = m + 1
         x = 1
@@ -207,6 +211,8 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
             print datetime.datetime.now()
 
     i = 0
+
+    N = 1.0/float(N)
 
     numerator_sum = numpy.multiply((1.0/float(total_denom_weights)), numerator_sum)
 
