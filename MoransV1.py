@@ -300,7 +300,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
 
     N = 1.0/float(N)
 
-    numerator_sum = numpy.multiply(numerator_sum, total_denom_weights)
+    numerator_sum = numpy.divide(numerator_sum, total_denom_weights)
 
     #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
     denomsum = numpy.multiply(N, denomsum)
