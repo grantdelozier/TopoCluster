@@ -96,6 +96,22 @@ def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
             mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict2[w])
         i += 1
     return mc_word_list
+
+def MonteCarloMorans2(gid_dict, means_dict, iterations, neighbor_ref, cores=2):
+    i = 0
+    import multiprocess
+
+    pool = multiprocessing.Pool(cores)
+    
+    mc_word_list = {}
+    while i <= iterations: 
+        results = pool.map(MoransCalc4, [[get_random_gid_dict(gid_dict),means_dict,iterations,neighbor_ref]  in range(1,cores)])
+        
+        #mc_dict2 = MoransCalc3(random_gid_dict, means_dict, neighbor_ref)
+        for w in mc_dict2:
+            mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict2[w])
+        i += cores
+    return mc_word_list
     
         
 
@@ -147,7 +163,80 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     ref_dict, ref_dict2 = buildRef(means_dict)
     
     mean_vector = getVector(means_dict, ref_dict)
-    sum_vectors = numpy.zeros((len(mean_vector),1))                           
+    #morans_vectors = numpy.zeros((len(mean_vector),1))
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+
+    N = float(1)/float(len(gid_dict))
+
+    for u in gid_dict:
+        #For each u, get its neighbors
+        #In future add condition for handling other types of kernel functions
+        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
+        target_vector = getVector(gid_dict[u], ref_dict)
+        #print "Num neighbors: ", len(neighbors)
+        #s1 = set([str(x[0]) for x in neighbors])
+        #s3 = s1 & set(gid_dict.keys())
+        #print s3
+        m = m + 1
+        x = 1
+        
+        for ui in neighbors:
+            gid = str(ui[0])
+            if gid in gid_dict:
+                            
+                w = float(ui[1])
+                            
+                total_denom_weights += w
+                            
+                neighbor_vector = getVector(gid_dict[gid], ref_dict)
+                            
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
+                            
+                denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
+                            
+                #div_vector = numpy.divide(numerator, denom)
+                
+                #sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+        if m % 50 == 0:
+            print "Left to go: ", len(gid_dict) - m
+            #print sum_vectors
+            #print numerator.sum(axis=0)
+            #print denom.sum(axis=0)
+            #print sum_vectors.sum(axis=0)
+            print datetime.datetime.now()
+
+    i = 0
+
+    numerator_sum = numpy.multiply((1.0/float(total_denom_weights)), numerator_sum)
+
+    #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
+    denomsum = numpy.multiply(N, denomsum)
+    
+    div_vector = numpy.divide(numerator_sum, denomsum)
+
+    morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+    
+    while i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        i += 1
+        
+    return morans_c
+
+#This version doesn't need a database connection to work        
+def MoransCalc3(gid_dict, means_dict, neighbor_ref):
+    morans_c = {}
+    total_denom_weights = 0
+
+    x = 1
+    m = 0
+
+    #First dictionary is word -> index, second is index -> word
+    ref_dict, ref_dict2 = buildRef(means_dict)
+    
+    mean_vector = getVector(means_dict, ref_dict)
+    sum_vectors = numpy.zeros((len(mean_vector),1))
+    
 
     for u in gid_dict:
         #For each u, get its neighbors
@@ -194,12 +283,11 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         i += 1
         
     return morans_c
-        
-            
+                    
         
         
 
-def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test):
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file):
 
     print "Morans Calc Parameters:"
     print "Train file: ", f
@@ -389,30 +477,60 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Getting Moran's scores"
 
     print "Number of words: ", len(means_dict)
-    
-    mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
-    wf = io.open(outf, 'w', encoding='utf-8')
-    sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
-    for mc in sorted_mc_dict:
-        try:
-            wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
-        except:
-            print "problem writing string", mc, mc_dict[sorted_mc_dict]
+    #If specified this will run the morans calculations using a neighbor reference file
+    #Intended for use on supercomputer where DB connection is unavailable
+    if neighbor_ref_file != "None":
 
-    wf.close()
+        neighbor_ref = {}
+        with io.open(neighbor_ref_file, 'r', encoding='utf-8') as w:
+            for line in w:
+                row = line.strip().split('\t')
+                if len(row) > 1:
+                    refs = row[1].split('|')
+                    neighbor_ref[row[0]] = refs
+                else: neighbor_ref[row[0]] = []
+        mc_dict = MoransCalc3(gid_dict, means_dict, neighbor_ref)
 
-    print "Done writing moran's scores to outfile"
+        wf = io.open(outf, 'w', encoding='utf-8')
+        sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
+        for mc in sorted_mc_dict:
+            try:
+                wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
+            except:
+                print "problem writing string", mc, mc_dict[sorted_mc_dict]
 
-    if sig_test == True:
-        print "Beginning Significance Tests"
-        #Need to parameterize this in the future
-        iterations = 100
-        mc_word_list = MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur) 
+        wf.close()
 
-    #Once the above gets running, need to incorporate significance testing
-    #Probably easiest to do this by randomizing the mapping of u's in gid_dict to the probability vectors
-    #Then recalculate 100-900 times
+        print "Done writing moran's scores to outfile"
+
+        if sig_test == True:
+            print "Beginning Significance Tests"
+            #Need to parameterize this in the future
+            iterations = 100
+            mc_word_list = MonteCarloMorans2(gid_dict, means_dict, neighbor_ref, iterations) 
+        
+    else:       
+        mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
+
+        wf = io.open(outf, 'w', encoding='utf-8')
+        sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
+        for mc in sorted_mc_dict:
+            try:
+                wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
+            except:
+                print "problem writing string", mc, mc_dict[sorted_mc_dict]
+
+        wf.close()
+
+        print "Done writing moran's scores to outfile"
+
+        if sig_test == True:
+            print "Beginning Significance Tests"
+            #Need to parameterize this in the future
+            iterations = 100
+            mc_word_list = MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur) 
+
 
     conn.close()
     
