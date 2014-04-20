@@ -54,6 +54,11 @@ def getVector(gid_dict_u, reference):
         u_vector[reference[wd]][0] = gid_dict_u[wd]
     return u_vector
 
+def getAppearsVector(neighbor_vector):
+    appear_vector = numpy.where(neighbor_vector <= 0.0, neighbor_vector, 1.0)
+    return appear_vector
+
+
 def buildRef(adict):
     x = 0
     dict_ref = {}
@@ -220,6 +225,87 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     denomsum = numpy.multiply(N, denomsum)
     
     div_vector = numpy.divide(numerator_sum, denomsum)
+
+    morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+    
+    while i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        i += 1
+        
+    return morans_c
+
+def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
+    morans_c = {}
+
+    print "Starting Morans calc 2 in appears mode"
+
+    x = 1
+    m = 0
+
+    #First dictionary is word -> index, second is index -> word
+    ref_dict, ref_dict2 = buildRef(means_dict)
+    
+    mean_vector = getVector(means_dict, ref_dict)
+    #morans_vectors = numpy.zeros((len(mean_vector),1))
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+    total_denom_weights = numpy.zeros((len(mean_vector),1))
+    
+    #Should N be equal to total size of gid_dict or the number of gid_dict with at least 1 neighbor?
+    #N = float(1)/float(len(gid_dict))
+    N = 0
+    
+    for u in gid_dict:
+        #For each u, get its neighbors
+        #In future add condition for handling other types of kernel functions
+        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
+        target_vector = getVector(gid_dict[u], ref_dict)
+        #print "Num neighbors: ", len(neighbors)
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+        if len(s3) >1:
+            N += 1
+        #print s3
+        m = m + 1
+        x = 1
+        
+        for ui in neighbors:
+            gid = str(ui[0])
+            if gid in gid_dict and str(gid) != str(u):
+                            
+                w = float(ui[1])
+                            
+                #total_denom_weights += w
+                            
+                neighbor_vector = getVector(gid_dict[gid], ref_dict)
+
+                total_denom_weights += getAppearsVector(neighbor_vector)
+                            
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
+                            
+                denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
+                            
+                #div_vector = numpy.divide(numerator, denom)
+                
+                #sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+        if m % 50 == 0:
+            print "Left to go: ", len(gid_dict) - m
+            #print sum_vectors
+            #print numerator.sum(axis=0)
+            #print denom.sum(axis=0)
+            #print sum_vectors.sum(axis=0)
+            print datetime.datetime.now()
+
+    i = 0
+
+    N = 1.0/float(N)
+
+    numerator_sum = numpy.multiply(numerator_sum, total_denom_weights)
+
+    #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
+    denomsum = numpy.multiply(N, denomsum)
+    
+    div_vector = numpy.divide(numpy.where(numerator_sum!=numpy.inf, numerator_sum, 0.0), denomsum)
 
     morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
     
@@ -531,8 +617,10 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             iterations = 100
             mc_word_list = MonteCarloMorans2(gid_dict, means_dict, neighbor_ref, iterations) 
         
-    elif neighbor_ref_file == "None":       
-        mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
+    elif neighbor_ref_file == "None":
+        if mean_method == "appears":
+            mc_dict = MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur)
+        else: mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
         wf = io.open(outf, 'w', encoding='utf-8')
 
