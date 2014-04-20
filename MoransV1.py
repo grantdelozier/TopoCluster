@@ -301,7 +301,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Using Aggregated LMs for train doc?: ", UseAggLMs
     print "Aggregated LMs write file: ", writeAggFile
     print "Significance testing?: ", sig_test
-    print "neighbor_ref_file?: " neighbor_ref_file
+    print "neighbor_ref_file?: ", neighbor_ref_file
 
     if writeAggLMs==True and UseAggLMs==True:
         print "ERROR: cannot both write and use agg LM, specify one or other option"
