@@ -179,7 +179,7 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #print "Num neighbors: ", len(neighbors)
         s1 = set([str(x[0]) for x in neighbors])
         s3 = s1 & set(gid_dict.keys())
-        if len(s3) >0:
+        if len(s3) >1:
             N += 1
         #print s3
         m = m + 1
@@ -187,7 +187,7 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         
         for ui in neighbors:
             gid = str(ui[0])
-            if gid in gid_dict:
+            if gid in gid_dict and str(gid) != str(u):
                             
                 w = float(ui[1])
                             
@@ -385,7 +385,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         #Aggregate Language Models in grid
         
         cur = conn.cursor()
-        #Fetch all points in our grid
+        #Fetch all points in our grid that have at least one document in them
         gid_lat_long_ref = {}
         print "Building Grid"
         SQL_fetchgrid = "SELECT DISTINCT p1.gid, ST_X(p1.geog::geometry), ST_Y(p1.geog::geometry) from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
