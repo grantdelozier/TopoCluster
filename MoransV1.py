@@ -260,6 +260,8 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
+        appears_target_vector = getAppearsVector(target_vector)
+        mean_vector2 =  numpy.multiply(appears_target_vector, mean_vector)
         #print "Num neighbors: ", len(neighbors)
         s1 = set([str(x[0]) for x in neighbors])
         s3 = s1 & set(gid_dict.keys())
@@ -279,11 +281,15 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
                             
                 neighbor_vector = getVector(gid_dict[gid], ref_dict)
 
-                total_denom_weights += getAppearsVector(neighbor_vector)
+                appears_vector = getAppearsVector(neighbor_vector)
+
+                total_denom_weights += appears_vector
+
+                mean_vector3 = numpy.multiply(appears_vector, mean_vector)
                             
-                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(neighbor_vector, mean_vector3 )))
                             
-                denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
+                denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector3 ))
                             
                 #div_vector = numpy.divide(numerator, denom)
                 
