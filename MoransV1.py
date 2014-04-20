@@ -406,7 +406,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #s2 = str.join('', s1)
                 #print s2
                 #print "#############"
-                gid_lat_long_ref[u[0]] = [u[1], u[2]]
+                gid_lat_long_ref[str(u[0])] = [u[1], u[2]]
                 #except:
                 #    for g in docs:
                 #        print docDict[g[0]].Feature_Freq
