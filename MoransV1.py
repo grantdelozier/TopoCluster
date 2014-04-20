@@ -253,7 +253,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
     
     #Should N be equal to total size of gid_dict or the number of gid_dict with at least 1 neighbor?
     #N = float(1)/float(len(gid_dict))
-    N = 0
+    N = numpy.zeros((len(mean_vector),1))
     
     for u in gid_dict:
         #For each u, get its neighbors
@@ -263,10 +263,11 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
         appears_target_vector = getAppearsVector(target_vector)
         mean_vector2 =  numpy.multiply(appears_target_vector, mean_vector)
         #print "Num neighbors: ", len(neighbors)
-        s1 = set([str(x[0]) for x in neighbors])
-        s3 = s1 & set(gid_dict.keys())
-        if len(s3) >1:
-            N += 1
+        #s1 = set([str(x[0]) for x in neighbors])
+        #s3 = s1 & set(gid_dict.keys())
+        N += appears_target_vector
+        #if len(s3) >1:
+        #    N += 1
         #print s3
         m = m + 1
         x = 1
@@ -304,14 +305,15 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
 
     i = 0
 
-    N = 1.0/float(N)
+    #N = 1.0/float(N)
 
     numerator_sum = numpy.divide(numerator_sum, total_denom_weights)
 
     #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
-    denomsum = numpy.multiply(N, denomsum)
+    #denomsum = numpy.multiply(N, denomsum)
+    denomsum = numpy.divide(denomsum, N)
     
-    div_vector = numpy.divide(numpy.where(numerator_sum!=numpy.inf, numerator_sum, 0.0), denomsum)
+    div_vector = numpy.divide(numpy.where(numerator_sum!=numpy.inf, numerator_sum, 0.0), numpy.where(denomsum!=numpy.inf, denomsum, 0.0))
 
     morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
     
