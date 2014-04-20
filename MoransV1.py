@@ -338,7 +338,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                     latit = row[1].split(',')[0]
                     longit = row[1].split(',')[1]
                     if UseAggLMs == False:
-                        F_Freq = dict(f.split(':') for f in row[2].split(" "))
+                        F_Freq = dict(f.split(':')[0],int(f.split(':')[1]) for f in row[2].split(" "))
                         F_All |= set(F_Freq.keys())
                         newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
                         docDict[userID] = newDoc
@@ -378,6 +378,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         cur = conn.cursor()
         #Fetch all points in our grid
         gid_lat_long_ref = {}
+        print "Building Grid..."
         SQL_fetchgrid = "SELECT DISTINCT p1.gid, ST_X(p1.geog::geometry), ST_Y(p1.geog::geometry) from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
         cur.execute(SQL_fetchgrid, (agg_dist, ))
         grid = cur.fetchall()
