@@ -174,10 +174,10 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
-        print "Num neighbors: ", len(neighbors)
+        #print "Num neighbors: ", len(neighbors)
         s1 = set([str(x[0]) for x in neighbors])
         s3 = s1 & set(gid_dict.keys())
-        print s3
+        #print s3
         m = m + 1
         x = 1
         
@@ -399,7 +399,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #print u[0], "Num Docs:", len(docs)
                 #print docs
                 #print docs[0][0]
-                gid_totalwords[u[0]] = sum([docDict[x[0]].total_words for x in docs])
+                gid_totalwords[str(u[0])] = sum([docDict[x[0]].total_words for x in docs])
                 gid_dict[str(u[0])] = reduce(updateInPlace, (Counter(docDict[x[0]].Feature_Freq) for x in docs))
                 #s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[u[0]].items()]
                 #print s1
