@@ -226,7 +226,9 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     
     div_vector = numpy.divide(numerator_sum, denomsum)
 
-    morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+    morans_vector_wh1 = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_wh1!=numpy.inf, morans_vector_wh1, 0.0)
     
     while i < len(morans_vector):
         morans_c[ref_dict2[i]] = morans_vector[i][0]
@@ -263,11 +265,11 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
         appears_target_vector = getAppearsVector(target_vector)
         mean_vector2 =  numpy.multiply(appears_target_vector, mean_vector)
         #print "Num neighbors: ", len(neighbors)
-        #s1 = set([str(x[0]) for x in neighbors])
-        #s3 = s1 & set(gid_dict.keys())
-        N += appears_target_vector
-        #if len(s3) >1:
-        #    N += 1
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+        
+        if len(s3) >1:
+            N += appears_target_vector
         #print s3
         m = m + 1
         x = 1
@@ -291,6 +293,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
                 numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(neighbor_vector, mean_vector3 )))
                             
                 denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector3 ))
+
                             
                 #div_vector = numpy.divide(numerator, denom)
                 
@@ -312,10 +315,18 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
     #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
     #denomsum = numpy.multiply(N, denomsum)
     denomsum = numpy.divide(denomsum, N)
-    
-    div_vector = numpy.divide(numpy.where(numerator_sum!=numpy.inf, numerator_sum, 0.0), numpy.where(denomsum!=numpy.inf, denomsum, 0.0))
 
-    morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+    denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
+
+    num_where = numpy.where(numpy.where(numerator_sum==numerator_sum, numerator_sum, 0.0)
+    
+    div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
+
+    #morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+
+    morans_vector_where = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
     
     while i < len(morans_vector):
         morans_c[ref_dict2[i]] = morans_vector[i][0]
