@@ -293,7 +293,7 @@ def MoransCalc3(gid_dict, means_dict, neighbor_ref):
         
         
 
-def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file):
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method):
 
     print "Morans Calc Parameters:"
     print "Train file: ", f
@@ -308,6 +308,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Aggregated LMs write file: ", writeAggFile
     print "Significance testing?: ", sig_test
     print "neighbor_ref_file?: ", neighbor_ref_file
+    print "mean calculation method: ", mean_method
 
     if writeAggLMs==True and UseAggLMs==True:
         print "ERROR: cannot both write and use agg LM, specify one or other option"
@@ -439,11 +440,16 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 grid_freqs[w] = grid_freqs.get(w, 0) + 1
 
 
-        for wd in means_dict:
-            means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+        if mean_method == "appears":
+            for wd in means_dict:
+                means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+        elif mean_method == "all":
+            for wd in means_dict:
+                means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
 
         print "Done Calculating Means"
 
+        print "Writing to aggregated grid file"
         #If option is set, write the grid aggregated documents to a file (can speed up subsequent loads if multiple calcs done on same file)
         #The output here can be read in as a train file and previous steps can be skipped for future loads.
         if writeAggLMs==True:
@@ -479,8 +485,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 means_dict[w] = means_dict.get(w, 0) + gid_dict[i][w]
                 grid_freqs[w] = grid_freqs.get(w, 0) + 1
         #testw.close()
-        for wd in means_dict:
-            means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+        if mean_method == "appears":
+            for wd in means_dict:
+                means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+        elif mean_method == "all":
+            for wd in means_dict:
+                means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
         print "Done obtaining means probs"
         
             
