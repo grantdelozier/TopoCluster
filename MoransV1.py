@@ -400,7 +400,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #print docs
                 #print docs[0][0]
                 gid_totalwords[u[0]] = sum([docDict[x[0]].total_words for x in docs])
-                gid_dict[u[0]] = reduce(updateInPlace, (Counter(docDict[x[0]].Feature_Freq) for x in docs))
+                gid_dict[str(u[0])] = reduce(updateInPlace, (Counter(docDict[x[0]].Feature_Freq) for x in docs))
                 #s1 = [str.join('', [' ', k, ':', unicode(v)]) for k,v in gid_dict[u[0]].items()]
                 #print s1
                 #s2 = str.join('', s1)
