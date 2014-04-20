@@ -420,6 +420,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         print "Calculating Word Means + Transforming to Unigram Probabilities..."
 
         means_dict = {}
+        grid_freqs = {}
 
         #Simple MLE Unigram estimate
         #In the future allow for other types of Prob Estimates
@@ -429,6 +430,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 gid_dict[i][w] = float(gid_dict[i][w])/float(gid_totalwords[i])
                 #Mean Unigram Prob among all points in grid
                 means_dict[w] = means_dict.get(w, 0) + gid_dict[i][w]
+                grid_freqs[w] = grid_freqs.get(w, 0) + 1
 
 
         for wd in means_dict:
@@ -460,7 +462,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         gid_dict = docDict
         print "Getting Mean probs"
         means_dict = {}
-        word_freqs = {}
+        grid_freqs = {}
 
         #testw = io.open('test_write.txt', 'w', encoding='utf-8')
         
@@ -469,7 +471,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 #Mean Unigram Prob among all points in grid
                 #testw.write(w + '\t' + str(gid_dict[i][w]) + '\r\n')
                 means_dict[w] = means_dict.get(w, 0) + gid_dict[i][w]
-                word_freqs[w] = word_freqs.get(w, 0) + 1
+                grid_freqs[w] = grid_freqs.get(w, 0) + 1
         #testw.close()
         for wd in means_dict:
             means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
@@ -499,9 +501,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
         for mc in sorted_mc_dict:
             try:
-                wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
+                wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
-                print "problem writing string", mc, mc_dict[sorted_mc_dict]
+                print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
         wf.close()
 
@@ -513,16 +515,17 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             iterations = 100
             mc_word_list = MonteCarloMorans2(gid_dict, means_dict, neighbor_ref, iterations) 
         
-    else:       
+    elif neighbor_ref_file == "None":       
         mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
         wf = io.open(outf, 'w', encoding='utf-8')
+
         sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
         for mc in sorted_mc_dict:
             try:
-                wf.write(mc[0] + '\t' + str(word_freqs[w]) + '\t' + str(mc[1]) + '\r\n')
+                wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
-                print "problem writing string", mc, mc_dict[sorted_mc_dict]
+                print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
         wf.close()
 
