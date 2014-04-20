@@ -318,7 +318,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
 
     denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
 
-    num_where = numpy.where(numpy.where(numerator_sum==numerator_sum, numerator_sum, 0.0)
+    num_where = numpy.where(numerator_sum==numerator_sum, numerator_sum, 0.0)
     
     div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
 
