@@ -310,7 +310,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
 
     #N = 1.0/float(N)
 
-    numerator_sum = numpy.divide(numerator_sum, total_denom_weights)
+    numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
 
     #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
     #denomsum = numpy.multiply(N, denomsum)
@@ -318,7 +318,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
 
     denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
 
-    num_where = numpy.where(numerator_sum==numerator_sum, numerator_sum, 0.0)
+    num_where = numpy.where(numerator_sum2==numerator_sum2, numerator_sum2, 0.0)
     
     div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
 
@@ -330,6 +330,16 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
     
     while i < len(morans_vector):
         morans_c[ref_dict2[i]] = morans_vector[i][0]
+        if morans_c[ref_dict2[i]] > 1.0:
+            print "#################"
+            print ref_dict2[i]
+            print ref_dict[ref_dict2[i]]
+            print "numerator sum: ", numerator_sum[i][0]
+            print "total denom weights: ", total_denom_weights[i][0]
+            print "denomsum: ", denomsum[i][0]
+            print "N: ", N[i][0]
+            print "morans C: ", morans_c[ref_dict2[i]]
+            
         i += 1
         
     return morans_c
