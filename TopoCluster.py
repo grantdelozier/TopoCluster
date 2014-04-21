@@ -137,13 +137,14 @@ if len(sys.argv) >= 3:
             if str(sig_test).lower() != "false":
                 sig_test = True
         except:
-            print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
+            print "You did not provide a significance test option, defaulting to false"
             sig_test = False
 
+        #neighbor reference file mode, meant to make calculations independent of DB connection. Not yet implemented
         try:
             neighbor_ref_file = args[args.index('-nieghbor_file')+1]
         except:
-            print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
+            print "You did not provide a neighbor reference file, defaulting to None"
             neighbor_ref_file = "None"
 
         #Calculate means and moran's scores using only grid cells where a word is observed (appears, all)
