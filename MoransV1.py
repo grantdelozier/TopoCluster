@@ -102,60 +102,23 @@ def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
         i += 1
     return mc_word_list
 
-def MonteCarloMorans2(gid_dict, means_dict, iterations, neighbor_ref, cores=2):
+#Distributed process version of MonteCarloMorans2
+def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores=2):
     i = 0
-    import multiprocess
+    import multiprocessing
 
     pool = multiprocessing.Pool(cores)
     
     mc_word_list = {}
     while i <= iterations: 
-        results = pool.map(MoransCalc4, [[get_random_gid_dict(gid_dict),means_dict,iterations,neighbor_ref]  in range(1,cores)])
+        mc_results = pool.map(MoransCalc3_appears, [[get_random_gid_dict(gid_dict),means_dict, gtbl, kern_dist, conn_info, i+x] for x in range(1,cores+1)])
         
         #mc_dict2 = MoransCalc3(random_gid_dict, means_dict, neighbor_ref)
-        for w in mc_dict2:
-            mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict2[w])
+        for mc_dict in mc_results:
+            for w in mc_dict:
+                mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict2[w])
         i += cores
     return mc_word_list
-    
-        
-
-def MoransCalc(gid_dict, gtbl, means_dict, kern_dist, cur):
-    morans_c = {}
-    total_denom_weights = 0
-
-    x = 1
-    m = 0    
-    for u in gid_dict:
-        #For each u, get its neighbors
-        #In future add condition for handling other types of kernel functions
-        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
-        m = m + 1
-        x = 1
-        for word in means_dict:
-            denom_weights = 0
-            #For each grid in neighbors
-            for ui in neighbors:
-                gid = ui[0]
-                if gid in gid_dict:
-                    w = float(ui[1])
-                    #Kernel weighted variance of a word between neighbors
-                    numerator = w * (gid_dict[u].get(word, 0.0) - means_dict[word])*(gid_dict[gid].get(word, 0.0) - means_dict[word])
-                    #MC Denominator
-                    denominator = math.pow((gid_dict[u].get(word, 0.0) - means_dict[word]), 2)/float(len(gid_dict))
-                    morans_c[word] = morans_c.get(word, 0.0) + (float(numerator) / float(denominator))
-                    denom_weights += w
-            if x == 1:
-                total_denom_weights += denom_weights
-            x += 1
-        if m % 10 == 0:
-            print m
-            print datetime.datetime.now()
-    #Last step, divide by sum of all kernel weights
-    for c in morans_c:
-        morans_c[c] = morans_c[c]/float(total_denom_weights)
-
-    return morans_c
 
 def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     morans_c = {}
@@ -341,6 +304,132 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
         
     return morans_c
 
+def MoransCalc3_appears(x):
+
+    gid_dict = x[0]
+
+    means_dict = x[1]
+
+    gtbl = x[2]
+
+    kern_dist = x[3]
+
+    conn_info = x[4]
+
+    iteration = x[5]
+    
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success"
+
+    cur = conn.cursor()
+    
+    morans_c = {}
+
+    print "Starting Morans calc 2 in appears mode"
+    print "Iteration: ", iteration
+
+    x = 1
+    m = 0
+
+    #First dictionary is word -> index, second is index -> word
+    ref_dict, ref_dict2 = buildRef(means_dict)
+    
+    mean_vector = getVector(means_dict, ref_dict)
+    #morans_vectors = numpy.zeros((len(mean_vector),1))
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+    total_denom_weights = numpy.zeros((len(mean_vector),1))
+    
+    #Should N be equal to total size of gid_dict or the number of gid_dict with at least 1 neighbor?
+    #N = float(1)/float(len(gid_dict))
+    N = numpy.zeros((len(mean_vector),1))
+    
+    for u in gid_dict:
+        #For each u, get its neighbors
+        #In future add condition for handling other types of kernel functions
+        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
+        target_vector = getVector(gid_dict[u], ref_dict)
+        appears_target_vector = getAppearsVector(target_vector)
+        mean_vector2 =  numpy.multiply(appears_target_vector, mean_vector)
+        #print "Num neighbors: ", len(neighbors)
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+        
+        if len(s3) >1:
+            N += appears_target_vector
+            denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector2 ))
+        #print s3
+        m = m + 1
+        x = 1
+        
+        for ui in neighbors:
+            gid = str(ui[0])
+            if gid in gid_dict and str(gid) != str(u):
+                            
+                w = float(ui[1])
+                            
+                #total_denom_weights += w
+                            
+                neighbor_vector = getVector(gid_dict[gid], ref_dict)
+
+                appears_vector = getAppearsVector(neighbor_vector)
+
+                total_denom_weights += appears_vector
+
+                mean_vector3 = numpy.multiply(appears_vector, mean_vector)
+                            
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(neighbor_vector, mean_vector3 )))
+                            
+                #div_vector = numpy.divide(numerator, denom)
+                
+                #sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+        if m % 50 == 0:
+            print "Iteration: ", iteration
+            print "Left to go: ", len(gid_dict) - m
+            #print sum_vectors
+            #print numerator.sum(axis=0)
+            #print denom.sum(axis=0)
+            #print sum_vectors.sum(axis=0)
+            print datetime.datetime.now()
+
+    i = 0
+
+    #N = 1.0/float(N)
+
+    numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
+
+    #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
+    #denomsum = numpy.multiply(N, denomsum)
+    denomsum = numpy.divide(denomsum, N)
+
+    denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
+
+    num_where = numpy.where(numerator_sum2==numerator_sum2, numerator_sum2, 0.0)
+    
+    div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
+
+    #morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+
+    morans_vector_where = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
+    
+    while i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        #if morans_c[ref_dict2[i]] > 1.0:
+        #    #print "#################"
+        #    #print ref_dict2[i]
+        #    #print ref_dict[ref_dict2[i]]
+        #    #print "numerator sum: ", numerator_sum[i][0]
+        #    #print "total denom weights: ", total_denom_weights[i][0]
+        #    #print "denomsum: ", denomsum[i][0]
+        #    #print "N: ", N[i][0]
+        #    #print "morans C: ", morans_c[ref_dict2[i]]            
+        i += 1
+        
+    return morans_c
+
 #This version doesn't need a database connection to work        
 def MoransCalc3(gid_dict, means_dict, neighbor_ref):
     morans_c = {}
@@ -405,7 +494,7 @@ def MoransCalc3(gid_dict, means_dict, neighbor_ref):
         
         
 
-def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method, grid_freq_min):
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method, grid_freq_min, iterations, cores):
 
     print "Morans Calc Parameters:"
     print "Train file: ", f
@@ -418,10 +507,14 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Writing Aggregated LMs?: ", writeAggLMs
     print "Using Aggregated LMs for train doc?: ", UseAggLMs
     print "Aggregated LMs write file: ", writeAggFile
-    print "Significance testing?: ", sig_test
     print "neighbor_ref_file?: ", neighbor_ref_file
     print "mean calculation method: ", mean_method
     print "minimum number of grid points word must appear in: ", grid_freq_min
+
+    print "Significance testing?: ", sig_test
+    print "Number of iterations on significance testing: ", iterations
+    print "Number of cores you want to devote to multiprocessed significance testing (recommended 1 less than max on system):", cores
+    
 
     if writeAggLMs==True and UseAggLMs==True:
         print "ERROR: cannot both write and use agg LM, specify one or other option"
@@ -651,26 +744,58 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             mc_dict = MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur)
         else: mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
 
-        wf = io.open(outf, 'w', encoding='utf-8')
+        if sig_test == False:
+            wf = io.open(outf, 'w', encoding='utf-8')
 
-        sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
-        for mc in sorted_mc_dict:
-            try:
-                #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
-                if grid_freqs[mc[0]] >= int(grid_freq_min):
-                    wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
-            except:
-                print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
+            sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
+            for mc in sorted_mc_dict:
+                try:
+                    #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
+                    if grid_freqs[mc[0]] >= int(grid_freq_min):
+                        wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
+                except:
+                    print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
-        wf.close()
+            wf.close()
 
-        print "Done writing moran's scores to outfile"
+            print "Done writing moran's scores to outfile"
 
         if sig_test == True:
             print "Beginning Significance Tests"
-            #Need to parameterize this in the future
-            iterations = 100
-            mc_word_list = MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur) 
+            import scipy.stats as st
+
+            if mean_method == "appears":
+                mc_word_list = MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores)
+                print "Done Performing Monte Carlo Simulations"
+
+                print "Starting Significance Testing..."
+
+                
+
+                wf = io.open(outf, 'w', encoding='utf-8')
+
+                sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
+
+                for mc in sorted_mc_dict:
+                    w = mc[0]
+
+                    samp_mean = numpy.mean(mc_word_list[w])
+                    std_dev = numpy.std(mc_word_list[w]) 
+                    sig_hat = std_dev / math.sqrt(iterations)
+                    pval = st.norm.sf((samp_mean - float(mc[1])) / sig_hat)
+                    pval2 = st.norm.sf((samp_mean - float(mc[1])) / std_dev)
+                    
+                    try:
+                        #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
+                        if grid_freqs[w] >= int(grid_freq_min):
+                            wf.write(w + '\t' + str(grid_freqs[w]) + '\t' + str(mc[1]) + '\t' + str(pval) + '\t' + str(pval2) + '\r\n')
+                    except:
+                        print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
+
+                wf.close()
+                
+                
+                
 
 
     conn.close()

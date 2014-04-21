@@ -131,6 +131,7 @@ if len(sys.argv) >= 3:
             print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
             write_agg_file = "tmp.txt"
 
+        #Significance testing for Moran's Coef values (true, false)
         try:
             sig_test = args[args.index('-sig_test')+1]
             if str(sig_test).lower() != "false":
@@ -145,6 +146,7 @@ if len(sys.argv) >= 3:
             print "You did not provide a write aggregate outfile option, defaulting to tmp.txt"
             neighbor_ref_file = "None"
 
+        #Calculate means and moran's scores using only grid cells where a word is observed (appears, all)
         try:
             mean_method = args[args.index('-mean_method')+1]
         except:
@@ -154,10 +156,24 @@ if len(sys.argv) >= 3:
         try:
             grid_min = args[args.index('-grid_freq_min')+1]
         except:
-            print "Did not provide a mean_method argument, defaulting to 'appears'"
+            print "Did not provide a grid_freq_min argument... defaulting to 1"
             grid_min = 1
 
-        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, int(grid_min))
+        #The number of iterations to perform on Monte Carlo Significance Simulation
+        try:
+            iterations = int(args[args.index('-iterations')+1])
+        except:
+            print "Did not provide a -iterations argument, defaulting to 0"
+            iterations = 0
+
+        #The number of cores you want to devote to multiprocessed significance testing
+        try:
+            cores = int(args[args.index('-cores')+1])
+        except:
+            print "Did not provide a -cores argument, defaulting to 1"
+            cores = 1
+
+        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, int(grid_min), iterations, cores)
 
 
     if "-help" in args:
