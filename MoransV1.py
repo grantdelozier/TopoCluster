@@ -69,7 +69,8 @@ def buildRef(adict):
         x += 1
     return dict_ref, dict_ref2
 
-def get_random_gid_dict(gid_dict):
+#Double randomization of location and words
+def get_random_gid_dict2(gid_dict):
     rand_dict = {k:{} for k in gid_dict.keys()}
     z = 0
     rand_dict_len = len(rand_dict)
@@ -83,9 +84,28 @@ def get_random_gid_dict(gid_dict):
             found = False
             while found == False:
                 randsel = random.randint(0, rand_dict_len-1)
-                if w not in rand_dict[randsel]:
-                    rand_dict[randsel][w] = gid_dict[u][w]
+                if w not in rand_dict[rand_ref[randsel]]:
+                    rand_dict[rand_ref[randsel]][w] = gid_dict[u][w]
                     found = True
+    return rand_dict
+
+#Randomization of location only
+def get_random_gid_dict(gid_dict):
+    rand_dict = {k:{} for k in gid_dict.keys()}
+    z = 0
+    rand_dict_len = len(rand_dict)
+    rand_ref = {}
+    for ke in rand_dict:
+        rand_ref[z] = ke
+        z +=1
+
+    for u in gid_dict:
+        found = False
+        while found == False:
+            randsel = random.randint(0, rand_dict_len-1)
+            if len(rand_dict[rand_ref[randsel]]) < 1 :
+                rand_dict[rand_ref[randsel]] = gid_dict[u]
+                found = True
     return rand_dict
 
         
