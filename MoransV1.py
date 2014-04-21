@@ -328,16 +328,15 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
     
     while i < len(morans_vector):
         morans_c[ref_dict2[i]] = morans_vector[i][0]
-        if morans_c[ref_dict2[i]] > 1.0:
-            print "#################"
-            print ref_dict2[i]
-            print ref_dict[ref_dict2[i]]
-            print "numerator sum: ", numerator_sum[i][0]
-            print "total denom weights: ", total_denom_weights[i][0]
-            print "denomsum: ", denomsum[i][0]
-            print "N: ", N[i][0]
-            print "morans C: ", morans_c[ref_dict2[i]]
-            
+        #if morans_c[ref_dict2[i]] > 1.0:
+        #    #print "#################"
+        #    #print ref_dict2[i]
+        #    #print ref_dict[ref_dict2[i]]
+        #    #print "numerator sum: ", numerator_sum[i][0]
+        #    #print "total denom weights: ", total_denom_weights[i][0]
+        #    #print "denomsum: ", denomsum[i][0]
+        #    #print "N: ", N[i][0]
+        #    #print "morans C: ", morans_c[ref_dict2[i]]            
         i += 1
         
     return morans_c
@@ -632,7 +631,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         for mc in sorted_mc_dict:
             try:
                 #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
-                if grid_freqs[mc[0]] >= grid_freqs_min:
+                if grid_freqs[mc[0]] >= int(grid_freq_min):
                     wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
                 print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
@@ -658,7 +657,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         for mc in sorted_mc_dict:
             try:
                 #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
-                if grid_freqs[mc[0]] >= grid_freqs_min:
+                if grid_freqs[mc[0]] >= int(grid_freq_min):
                     wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
                 print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
