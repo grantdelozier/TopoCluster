@@ -802,8 +802,8 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                     samp_mean = numpy.mean(mc_word_list[w])
                     std_dev = numpy.std(mc_word_list[w]) 
                     sig_hat = std_dev / math.sqrt(iterations)
-                    pval = st.norm.sf((samp_mean - float(mc[1])) / sig_hat)
-                    pval2 = st.norm.sf((samp_mean - float(mc[1])) / std_dev)
+                    pval = st.norm.sf((float(mc[1]) - samp_mean ) / sig_hat)
+                    pval2 = st.norm.sf((float(mc[1]) - samp_mean ) / std_dev)
                     
                     try:
                         #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
