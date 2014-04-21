@@ -270,6 +270,7 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
         
         if len(s3) >1:
             N += appears_target_vector
+            denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector2 ))
         #print s3
         m = m + 1
         x = 1
@@ -291,9 +292,6 @@ def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
                 mean_vector3 = numpy.multiply(appears_vector, mean_vector)
                             
                 numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(neighbor_vector, mean_vector3 )))
-                            
-                denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector3 ))
-
                             
                 #div_vector = numpy.divide(numerator, denom)
                 
