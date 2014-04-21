@@ -406,7 +406,7 @@ def MoransCalc3(gid_dict, means_dict, neighbor_ref):
         
         
 
-def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method):
+def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method, grid_freq_min):
 
     print "Morans Calc Parameters:"
     print "Train file: ", f
@@ -422,6 +422,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Significance testing?: ", sig_test
     print "neighbor_ref_file?: ", neighbor_ref_file
     print "mean calculation method: ", mean_method
+    print "minimum number of grid points word must appear in: ", grid_freq_min
 
     if writeAggLMs==True and UseAggLMs==True:
         print "ERROR: cannot both write and use agg LM, specify one or other option"
@@ -630,7 +631,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
         for mc in sorted_mc_dict:
             try:
-                wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
+                #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
+                if grid_freqs[mc[0]] >= grid_freqs_min:
+                    wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
                 print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
@@ -654,7 +657,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
         for mc in sorted_mc_dict:
             try:
-                wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
+                #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
+                if grid_freqs[mc[0]] >= grid_freqs_min:
+                    wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
             except:
                 print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
