@@ -157,7 +157,7 @@ if len(sys.argv) >= 3:
             print "Did not provide a mean_method argument, defaulting to 'appears'"
             grid_min = 1
 
-        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, grid_min)
+        morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, int(grid_min))
 
 
     if "-help" in args:
