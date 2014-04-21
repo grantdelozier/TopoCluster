@@ -136,7 +136,7 @@ def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist,
         #mc_dict2 = MoransCalc3(random_gid_dict, means_dict, neighbor_ref)
         for mc_dict in mc_results:
             for w in mc_dict:
-                mc_word_list[w] = mc_word_list.setdefault(w, list()).append(mc_dict[w])
+                mc_word_list.setdefault(w, list()).append(mc_dict[w])
         i += cores
     return mc_word_list
 
