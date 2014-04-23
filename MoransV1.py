@@ -447,7 +447,8 @@ def MoransCalc3_appears(x):
         #    #print "N: ", N[i][0]
         #    #print "morans C: ", morans_c[ref_dict2[i]]            
         i += 1
-        
+
+    conn.close()
     return morans_c
 
 #This version doesn't need a database connection to work        
@@ -673,7 +674,6 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for wd in means_dict:
                 means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
 
-        print "Done Calculating Means"
 
         print "Writing to aggregated grid file"
         #If option is set, write the grid aggregated documents to a file (can speed up subsequent loads if multiple calcs done on same file)
@@ -692,6 +692,21 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 openw.write(unicode(str(i), 'utf-8') + '\t' + lat_long + '\t' + s2.strip() + '\r\n')
             openw.close()
             print "Done writing to file"
+
+
+        print "Done Calculating Means"
+
+        if grid_min_freq > 1:
+            print "Pruning Dictionary of infrequent items"
+            min_grid_dict = {}
+            for i in gid_dict:
+                for w in gid_dict[i]:
+                    if grid_freqs[w] > grid_freq_min:
+                        min_grid_dict[i][w] = gid_dict[i][w]
+                        del gid_dict[i][w]
+        else:
+            min_grid_dict = gid_dict
+            del gid_dict
     #sys.exit()
 
     if UseAggLMs == True:
@@ -718,7 +733,20 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for wd in means_dict:
                 means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
         print "Done obtaining means probs"
+
         
+        if grid_min_freq > 1:
+            print "Pruning Dictionary of infrequent items"
+            min_grid_dict = {}
+            for i in gid_dict:
+                for w in gid_dict[i]:
+                    if grid_freqs[w] > grid_freq_min:
+                        min_grid_dict[i][w] = gid_dict[i][w]
+                        del gid_dict[i][w]
+        else:
+            min_grid_dict = gid_dict
+            del gid_dict
+
             
             
     print "Getting Moran's scores"
@@ -737,7 +765,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                     refs = row[1].split('|')
                     neighbor_ref[row[0]] = refs
                 else: neighbor_ref[row[0]] = []
-        mc_dict = MoransCalc3(gid_dict, means_dict, neighbor_ref)
+        mc_dict = MoransCalc3(min_gid_dict, means_dict, neighbor_ref)
 
         wf = io.open(outf, 'w', encoding='utf-8')
         sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
@@ -755,14 +783,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         if sig_test == True:
             print "Beginning Significance Tests"
-            #Need to parameterize this in the future
-            iterations = 100
-            mc_word_list = MonteCarloMorans2(gid_dict, means_dict, neighbor_ref, iterations) 
+            mc_word_list = MonteCarloMorans2(min_gid_dict, means_dict, neighbor_ref, iterations) 
         
     elif neighbor_ref_file == "None":
         if mean_method == "appears":
-            mc_dict = MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur)
-        else: mc_dict = MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur)
+            mc_dict = MoransCalc2_appears(min_gid_dict, gtbl, means_dict, kern_dist, cur)
+        else: mc_dict = MoransCalc2(min_gid_dict, gtbl, means_dict, kern_dist, cur)
 
         if sig_test == False:
             wf = io.open(outf, 'w', encoding='utf-8')
@@ -771,8 +797,8 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for mc in sorted_mc_dict:
                 try:
                     #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
-                    if grid_freqs[mc[0]] >= int(grid_freq_min):
-                        wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
+                    #Should no longer be writing infrequent words, needs verification
+                    wf.write(mc[0] + '\t' + str(grid_freqs[mc[0]]) + '\t' + str(mc[1]) + '\r\n')
                 except:
                     print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
@@ -785,7 +811,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             import scipy.stats as st
 
             if mean_method == "appears":
-                mc_word_list = MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores)
+                mc_word_list = MonteCarloMorans2_appears(min_gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores)
                 print "Done Performing Monte Carlo Simulations"
 
                 print "Starting Significance Testing..."
@@ -807,8 +833,8 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                     
                     try:
                         #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
-                        if grid_freqs[w] >= int(grid_freq_min):
-                            wf.write(w + '\t' + str(grid_freqs[w]) + '\t' + str(mc[1]) + '\t' + str(pval) + '\t' + str(pval2) + '\r\n')
+                        #Should no longer be writing infrequent words... needs verification
+                        wf.write(w + '\t' + str(grid_freqs[w]) + '\t' + str(mc[1]) + '\t' + str(pval) + '\t' + str(pval2) + '\r\n')
                     except:
                         print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
