@@ -700,15 +700,15 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         if grid_freq_min > 1:
             print "Pruning Dictionary of infrequent items"
-            min_grid_dict = {}
+            min_gid_dict = {}
             for i in gid_dict:
                 for w in gid_dict[i]:
                     if grid_freqs[w] >= grid_freq_min:
                         if i not in min_grid_dict:
-                            min_grid_dict[i] = {}
-                        min_grid_dict[i].setdefault(w, gid_dict[i][w])
+                            min_gid_dict[i] = {}
+                        min_gid_dict[i].setdefault(w, gid_dict[i][w])
         else:
-            min_grid_dict = gid_dict
+            min_gid_dict = gid_dict
         del gid_dict
     #sys.exit()
 
@@ -742,15 +742,15 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         
         if grid_freq_min > 1:
             print "Pruning Dictionary of infrequent items"
-            min_grid_dict = {}
+            min_gid_dict = {}
             for i in gid_dict:
                 for w in gid_dict[i]:
                     if grid_freqs[w] >= grid_freq_min:
                         if i not in min_grid_dict:
-                            min_grid_dict[i] = {}
-                        min_grid_dict[i].setdefault(w, gid_dict[i][w])
+                            min_gid_dict[i] = {}
+                        min_gid_dict[i].setdefault(w, gid_dict[i][w])
         else:
-            min_grid_dict = gid_dict
+            min_gid_dict = gid_dict
         del gid_dict
 
             
