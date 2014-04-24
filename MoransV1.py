@@ -704,7 +704,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for i in gid_dict:
                 for w in gid_dict[i]:
                     if grid_freqs[w] >= grid_freq_min:
-                        min_grid_dict[i][w] = gid_dict[i][w]
+                        if i not in min_grid_dict:
+                            min_grid_dict[i] = {}
+                        min_grid_dict[i].setdefault(w, gid_dict[i][w])
                         del gid_dict[i][w]
         else:
             min_grid_dict = gid_dict
@@ -745,7 +747,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for i in gid_dict:
                 for w in gid_dict[i]:
                     if grid_freqs[w] >= grid_freq_min:
-                        min_grid_dict[i][w] = gid_dict[i][w]
+                        if i not in min_grid_dict:
+                            min_grid_dict[i] = {}
+                        min_grid_dict[i].setdefault(w, gid_dict[i][w])
                         del gid_dict[i][w]
         else:
             min_grid_dict = gid_dict
