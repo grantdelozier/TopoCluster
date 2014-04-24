@@ -158,7 +158,7 @@ if len(sys.argv) >= 3:
             grid_min = args[args.index('-grid_freq_min')+1]
         except:
             print "Did not provide a grid_freq_min argument... defaulting to 1"
-            grid_min = 1
+            grid_min = 0
 
         #The number of iterations to perform on Monte Carlo Significance Simulation
         try:

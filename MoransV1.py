@@ -669,10 +669,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         if mean_method == "appears":
             for wd in means_dict:
-                means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+                if grid_freqs[wd] >= min_grid_freq:
+                    means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
         elif mean_method == "all":
             for wd in means_dict:
-                means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+                if grid_freqs[wd] >= min_grid_freq:
+                    means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
 
 
         print "Writing to aggregated grid file"
@@ -701,7 +703,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             min_grid_dict = {}
             for i in gid_dict:
                 for w in gid_dict[i]:
-                    if grid_freqs[w] > grid_freq_min:
+                    if grid_freqs[w] >= grid_freq_min:
                         min_grid_dict[i][w] = gid_dict[i][w]
                         del gid_dict[i][w]
         else:
@@ -728,10 +730,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         #testw.close()
         if mean_method == "appears":
             for wd in means_dict:
-                means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+                if grid_freqs[wd] >= min_grid_freq:
+                    means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
         elif mean_method == "all":
             for wd in means_dict:
-                means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+                if grid_freqs[wd] >= min_grid_freq:
+                    means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
         print "Done obtaining means probs"
 
         
@@ -740,7 +744,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             min_grid_dict = {}
             for i in gid_dict:
                 for w in gid_dict[i]:
-                    if grid_freqs[w] > grid_freq_min:
+                    if grid_freqs[w] >= grid_freq_min:
                         min_grid_dict[i][w] = gid_dict[i][w]
                         del gid_dict[i][w]
         else:
