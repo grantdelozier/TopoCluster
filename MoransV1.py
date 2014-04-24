@@ -669,11 +669,11 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         if mean_method == "appears":
             for wd in means_dict:
-                if grid_freqs[wd] >= min_grid_freq:
+                if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
         elif mean_method == "all":
             for wd in means_dict:
-                if grid_freqs[wd] >= min_grid_freq:
+                if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
 
 
@@ -730,11 +730,11 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         #testw.close()
         if mean_method == "appears":
             for wd in means_dict:
-                if grid_freqs[wd] >= min_grid_freq:
+                if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
         elif mean_method == "all":
             for wd in means_dict:
-                if grid_freqs[wd] >= min_grid_freq:
+                if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
         print "Done obtaining means probs"
 
