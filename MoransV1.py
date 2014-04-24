@@ -698,7 +698,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         print "Done Calculating Means"
 
-        if grid_min_freq > 1:
+        if grid_freq_min > 1:
             print "Pruning Dictionary of infrequent items"
             min_grid_dict = {}
             for i in gid_dict:
@@ -739,7 +739,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         print "Done obtaining means probs"
 
         
-        if grid_min_freq > 1:
+        if grid_freq_min > 1:
             print "Pruning Dictionary of infrequent items"
             min_grid_dict = {}
             for i in gid_dict:
