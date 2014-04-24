@@ -707,10 +707,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                         if i not in min_grid_dict:
                             min_grid_dict[i] = {}
                         min_grid_dict[i].setdefault(w, gid_dict[i][w])
-                        del gid_dict[i][w]
         else:
             min_grid_dict = gid_dict
-            del gid_dict
+        del gid_dict
     #sys.exit()
 
     if UseAggLMs == True:
@@ -750,10 +749,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                         if i not in min_grid_dict:
                             min_grid_dict[i] = {}
                         min_grid_dict[i].setdefault(w, gid_dict[i][w])
-                        del gid_dict[i][w]
         else:
             min_grid_dict = gid_dict
-            del gid_dict
+        del gid_dict
 
             
             
