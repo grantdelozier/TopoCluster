@@ -1,8 +1,9 @@
+import sys
+
 import psycopg2
 import datetime
 import io
 import math
-import sys
 import numpy
 
 from collections import Counter
@@ -122,6 +123,28 @@ def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
         i += 1
     return mc_word_list
 
+#Get equal parts references for gid_dict. For use in multiprocessed morans calc
+def dict_chunker(adict, cores):
+    list1 = []
+    if len(adict) % cores != 0:
+        even = False
+        lastit = 0
+        n = len(adict)
+        d = cores
+        it = (n+d // 2) // d
+        nextit = it
+        print "it: ", it
+        while even == False:
+            if nextit <= len(adict):
+                list1.append(list(adict.keys()[lastit:nextit]))
+                lastit = nextit
+                nextit = nextit + it
+            elif nextit > len(adict):
+                list1.append(list(adict.keys()[lastit:len(adict)]))
+                even = True
+            else: even = True
+    return list1
+
 #Distributed process version of MonteCarloMorans2
 def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores=2):
     i = 0
@@ -218,6 +241,152 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
         i += 1
         
     return morans_c
+
+
+def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
+    morans_c = {}
+
+    print "Starting Morans calc 2 in appears mode"
+
+    import multiprocessing
+
+    pool = multiprocessing.Pool(cores)
+
+    #First dictionary is word -> index, second is index -> word
+    ref_dict, ref_dict2 = buildRef(means_dict)
+    
+    mean_vector = getVector(means_dict, ref_dict)
+    #morans_vectors = numpy.zeros((len(mean_vector),1))
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+    total_denom_weights = numpy.zeros((len(mean_vector),1))
+    
+    #Should N be equal to total size of gid_dict or the number of gid_dict with at least 1 neighbor?
+    #N = float(1)/float(len(gid_dict))
+    N = numpy.zeros((len(mean_vector),1))
+
+    id_lists = dict_chunker(gid_dict, cores)
+
+    map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, cur] for x in id_lists]
+
+    returnlists = pool.map(CoreMoransCalcs, map_args)
+
+    print "Adding multiprocessed results"
+    for s in returnlists:
+        
+        total_denom_weighst += s[0]
+        numerator_sum += s[1]
+        denomsum += s[2]
+        N += s[3]
+
+    i = 0
+
+    #N = 1.0/float(N)
+
+    numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
+
+    #Should N here be the inverse of the total number of grid points? Or only the number of points with at least 1 neighbor?
+    #denomsum = numpy.multiply(N, denomsum)
+    denomsum = numpy.divide(denomsum, N)
+
+    denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
+
+    num_where = numpy.where(numerator_sum2==numerator_sum2, numerator_sum2, 0.0)
+    
+    div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
+
+    #morans_vector = numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+
+    morans_vector_where = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
+    
+    while i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        #if morans_c[ref_dict2[i]] > 1.0:
+        #    #print "#################"
+        #    #print ref_dict2[i]
+        #    #print ref_dict[ref_dict2[i]]
+        #    #print "numerator sum: ", numerator_sum[i][0]
+        #    #print "total denom weights: ", total_denom_weights[i][0]
+        #    #print "denomsum: ", denomsum[i][0]
+        #    #print "N: ", N[i][0]
+        #    #print "morans C: ", morans_c[ref_dict2[i]]            
+        i += 1
+        
+    return morans_c
+        
+
+    
+
+def CoreMoransCalcs(x):
+    print "Starting branched Morans Calc"
+    
+    gid_dict = x[0]
+    id_list = x[1]
+    gtbl = x[2]
+    mean_vector = x[3]
+    denomsum = x[4]
+    numerator_sum = x[5]
+    total_denom_weights = x[6]
+    N = x[7]
+    kern_dist = x[8]
+    ref_dict = x[9]
+    cur = x[10]
+
+    m = 0
+
+    for u in id_list:
+        #For each u, get its neighbors
+        #In future add condition for handling other types of kernel functions
+        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
+        target_vector = getVector(gid_dict[u], ref_dict)
+        appears_target_vector = getAppearsVector(target_vector)
+        mean_vector2 =  numpy.multiply(appears_target_vector, mean_vector)
+        #print "Num neighbors: ", len(neighbors)
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+        
+        if len(s3) >1:
+            N += appears_target_vector
+            denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(target_vector, mean_vector2 ))
+        #print s3
+        m = m + 1
+        x = 1
+        
+        for ui in neighbors:
+            gid = str(ui[0])
+            if gid in gid_dict and str(gid) != str(u):
+                            
+                w = float(ui[1])
+                            
+                #total_denom_weights += w
+                            
+                neighbor_vector = getVector(gid_dict[gid], ref_dict)
+
+                appears_vector = getAppearsVector(neighbor_vector)
+
+                total_denom_weights += appears_vector
+
+                mean_vector3 = numpy.multiply(appears_vector, mean_vector)
+                            
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector2 ), numpy.subtract(neighbor_vector, mean_vector3 )))
+                            
+                #div_vector = numpy.divide(numerator, denom)
+                
+                #sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+        if m % 50 == 0:
+            print "Iteration: ", iteration
+            print "Left to go: ", len(id_list) - m
+            #print sum_vectors
+            #print numerator.sum(axis=0)
+            #print denom.sum(axis=0)
+            #print sum_vectors.sum(axis=0)
+            print datetime.datetime.now()
+
+    return [total_denom_weights, numerator_sum, denomsum, N]
+
+        
 
 def MoransCalc2_appears(gid_dict, gtbl, means_dict, kern_dist, cur):
     morans_c = {}
@@ -793,7 +962,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         
     elif neighbor_ref_file == "None":
         if mean_method == "appears":
-            mc_dict = MoransCalc2_appears(min_gid_dict, gtbl, means_dict, kern_dist, cur)
+            mc_dict = MoransCalc4_appears(min_gid_dict, gtbl, means_dict, kern_dist, cur, cores)
         else: mc_dict = MoransCalc2(min_gid_dict, gtbl, means_dict, kern_dist, cur)
 
         if sig_test == False:
