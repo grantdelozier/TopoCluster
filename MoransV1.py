@@ -126,23 +126,22 @@ def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
 #Get equal parts references for gid_dict. For use in multiprocessed morans calc
 def dict_chunker(adict, cores):
     list1 = []
-    if len(adict) % cores != 0:
-        even = False
-        lastit = 0
-        n = len(adict)
-        d = cores
-        it = (n+d // 2) // d
-        nextit = it
-        print "it: ", it
-        while even == False:
-            if nextit <= len(adict):
-                list1.append(list(adict.keys()[lastit:nextit]))
-                lastit = nextit
-                nextit = nextit + it
-            elif nextit > len(adict):
-                list1.append(list(adict.keys()[lastit:len(adict)]))
-                even = True
-            else: even = True
+    even = False
+    lastit = 0
+    n = len(adict)
+    d = cores
+    it = (n+d // 2) // d
+    nextit = it
+    print "it: ", it
+    while even == False:
+        if nextit <= len(adict):
+            list1.append(list(adict.keys()[lastit:nextit]))
+            lastit = nextit
+            nextit = nextit + it
+        elif nextit > len(adict):
+            list1.append(list(adict.keys()[lastit:len(adict)]))
+            even = True
+        else: even = True
     return list1
 
 #Distributed process version of MonteCarloMorans2
