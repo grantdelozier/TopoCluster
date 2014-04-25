@@ -850,10 +850,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+                else: means_dict.pop(wd, 'none')
         elif mean_method == "all":
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+                else: means_dict.pop(wd, 'none')
 
 
         print "Writing to aggregated grid file"
@@ -912,10 +914,12 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
+                else: means_dict.pop(wd, 'none')
         elif mean_method == "all":
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
+                else: means_dict.pop(wd, 'none')
         print "Done obtaining means probs"
 
         
