@@ -139,8 +139,10 @@ def dict_chunker(adict, cores):
             list1.append(list(adict.keys()[lastit:nextit]))
             lastit = nextit
             nextit = nextit + it
+            if lastit == len(adict):
+                even = True
         elif nextit > len(adict):
-            list1.append(list(adict.keys()[lastit:len(adict)]))
+            list1.append(list(adict.keys()[lastit:len(adict)-1]))
             even = True
         else: even = True
     return list1
