@@ -860,6 +860,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         print "Min threshold removing --", len(plist), "-- elements from dictionaries"
         for wd in plist:
             means_dict.pop(wd, 'none')
+        del plist
 
 
         print "Writing to aggregated grid file"
@@ -931,6 +932,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         print "Min threshold removing --", len(plist), "-- elements from dictionaries"
         for wd in plist:
             means_dict.pop(wd, 'none')
+        del plist
 
         
         if grid_freq_min > 1:
