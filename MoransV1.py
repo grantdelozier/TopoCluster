@@ -242,7 +242,7 @@ def MoransCalc2(gid_dict, gtbl, means_dict, kern_dist, cur):
     return morans_c
 
 
-def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
+def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores):
     morans_c = {}
 
     print "Starting Morans calc 2 in appears mode"
@@ -268,7 +268,7 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
 
     print "Number of processes spawning: ", len(id_lists)
 
-    map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, cur] for x in id_lists]
+    map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, conn_info] for x in id_lists]
 
     returnlists = pool.map(CoreMoransCalcs, map_args)
 
@@ -325,6 +325,7 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
 
 def CoreMoransCalcs(x):
     print "Starting branched Morans Calc"
+
     
     gid_dict = x[0]
     id_list = x[1]
@@ -336,7 +337,13 @@ def CoreMoransCalcs(x):
     N = x[7]
     kern_dist = x[8]
     ref_dict = x[9]
-    cur = x[10]
+    conn_info = x[10]
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success"
+
+    cur = conn.cursor()
 
     m = 0
 
@@ -966,7 +973,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         
     elif neighbor_ref_file == "None":
         if mean_method == "appears":
-            mc_dict = MoransCalc4_appears(min_gid_dict, gtbl, means_dict, kern_dist, cur, cores)
+            mc_dict = MoransCalc4_appears(min_gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
         else: mc_dict = MoransCalc2(min_gid_dict, gtbl, means_dict, kern_dist, cur)
 
         if sig_test == False:
