@@ -123,29 +123,16 @@ def MonteCarloMorans(gid_dict, means_dict, iterations, gtbl, kern_dist, cur):
         i += 1
     return mc_word_list
 
-#Get equal parts references for gid_dict. For use in multiprocessed morans calc
-def dict_chunker(adict, cores):
-    list1 = []
-    even = False
-    lastit = 0
-    print "Dict size:", len(adict)
-    n = len(adict)
-    d = cores
-    it = (n+d // 2) // d
-    nextit = it
-    print "it: ", it
-    while even == False:
-        if nextit <= len(adict):
-            list1.append(list(adict.keys()[lastit:nextit]))
-            lastit = nextit
-            nextit = nextit + it
-            if lastit == len(adict):
-                even = True
-        elif nextit > len(adict):
-            list1.append(list(adict.keys()[lastit:len(adict)-1]))
-            even = True
-        else: even = True
-    return list1
+def chunkIt(seq, num):
+  avg = len(seq) / float(num)
+  out = []
+  last = 0.0
+
+  while last < len(seq):
+    out.append(seq[int(last):int(last + avg)])
+    last += avg
+
+  return out
 
 #Distributed process version of MonteCarloMorans2
 def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores=2):
@@ -267,7 +254,7 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
     #N = float(1)/float(len(gid_dict))
     N = numpy.zeros((len(mean_vector),1))
 
-    id_lists = dict_chunker(gid_dict, cores)
+    id_lists = chunkIt(gid_dict.keys(), cores)
 
     print "Number of processes spawning: ", len(id_lists)
 
