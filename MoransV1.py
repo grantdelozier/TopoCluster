@@ -845,17 +845,21 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 means_dict[w] = means_dict.get(w, 0) + gid_dict[i][w]
                 grid_freqs[w] = grid_freqs.get(w, 0) + 1
 
-
+        plist = []
         if mean_method == "appears":
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
-                else: means_dict.pop(wd, 'none')
+                else: plist.append(wd)
         elif mean_method == "all":
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
-                else: means_dict.pop(wd, 'none')
+                else: plist.append(wd)
+
+        print "Min threshold removing --", len(plist), "-- elements from dictionaries"
+        for wd in plist:
+            means_dict.pop(wd, 'none')
 
 
         print "Writing to aggregated grid file"
@@ -902,6 +906,8 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
         grid_freqs = {}
 
         #testw = io.open('test_write.txt', 'w', encoding='utf-8')
+
+        plist = []
         
         for i in gid_dict:
             for w in gid_dict[i]:
@@ -914,13 +920,17 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(grid_freqs[wd])
-                else: means_dict.pop(wd, 'none')
+                else: plist.append(wd)
         elif mean_method == "all":
             for wd in means_dict:
                 if grid_freqs[wd] >= grid_freq_min:
                     means_dict[wd] = float(means_dict[wd]) / float(len(gid_dict))
-                else: means_dict.pop(wd, 'none')
+                else: plist.append(wd)
         print "Done obtaining means probs"
+
+        print "Min threshold removing --", len(plist), "-- elements from dictionaries"
+        for wd in plist:
+            means_dict.pop(wd, 'none')
 
         
         if grid_freq_min > 1:
