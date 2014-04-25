@@ -698,6 +698,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
     print "Morans Calc Parameters:"
     print "Train file: ", f
     print "Document Table Name: ", dtbl
+    print "Grid Table Name: ", gtbl
     print "Connection Information: ", conn_info
     print "Morans Score Outfile: ", outf
     print "Aggregate Docs Distance: ", agg_dist
@@ -712,7 +713,7 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
     print "Significance testing?: ", sig_test
     print "Number of iterations on significance testing: ", iterations
-    print "Number of cores you want to devote to multiprocessed significance testing (recommended 1 less than max on system):", cores
+    print "Number of cores you want to devote to multiprocessing (recommended 1 less than max on system):", cores
     
 
     if writeAggLMs==True and UseAggLMs==True:
