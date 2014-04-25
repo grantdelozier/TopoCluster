@@ -267,9 +267,13 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
 
     id_lists = dict_chunker(gid_dict, cores)
 
+    print "Number of processes spawning: ", len(id_lists)
+
     map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, cur] for x in id_lists]
 
     returnlists = pool.map(CoreMoransCalcs, map_args)
+
+    print "Number of processes spawned: ", len(id_lists)
 
     print "Adding multiprocessed results"
     for s in returnlists:
