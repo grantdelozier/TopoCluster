@@ -274,6 +274,7 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, cur, cores):
     returnlists = pool.map(CoreMoransCalcs, map_args)
 
     print "Number of processes spawned: ", len(id_lists)
+    print "Number of processes returned: ", len(returnlists)
 
     print "Adding multiprocessed results"
     for s in returnlists:
