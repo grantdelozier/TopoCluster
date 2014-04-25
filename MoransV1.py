@@ -285,7 +285,7 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
     print "Adding multiprocessed results"
     for s in returnlists:
         
-        total_denom_weighst += s[0]
+        total_denom_weights += s[0]
         numerator_sum += s[1]
         denomsum += s[2]
         N += s[3]
@@ -355,7 +355,7 @@ def CoreMoransCalcs(x):
     m = 0
 
     for u in id_list:
-        print u
+        #print u
         #For each u, get its neighbors
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
