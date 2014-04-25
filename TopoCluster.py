@@ -7,6 +7,92 @@ if len(sys.argv) >= 3:
     mode_arg = args[args.index("-mode")+1]
     print mode_arg
 
+    ##########################Local Spatial Stastics Mode (Gi*, Zavg)#######################
+    if mode_arg.lower() == "local_stats":
+        import LocalSpatialStatsV1.py as LSS
+        print "Starting Local Spatial Statistics"
+
+        #Trainfile / devfile / test file
+        if '-tf' in args:
+            f = args[args.index("-tf")+1]
+        elif '-df' in args:
+            f = args[args.index("-df")+1]
+        elif '-tstf' in args:
+            f = args[args.index("-tstf")+1]
+
+        #Document Type: (wiki, twitter)
+        try:
+            traintype = args[args.index("-traintype")+1]
+        except:
+            print "You did not provide a training file type (wiki or twitter)"
+            sys.exit("Error")
+
+        #Document table name
+        try:
+            dtbl = args[args.index("-dtbl")+1]
+        except:
+            print "You did not provide a name for a document table to output"
+            sys.exit("Error")
+
+        #Pointgrid table name
+        try:
+            gtbl = args[args.index('-gtbl')+1]
+        except:
+            print "You did not provide a grid table argument"
+            sys.exit("Error") 
+
+        #Postgresql connection information
+        try:
+            conn = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        #Which Statistic is going to be calculated
+        try:
+            statistic = args[args.index('-statistic')+1]
+        except:
+            print "You did not provide a statistic type"
+            print "e.g. -statistic gi -statistic zavg -statistic gi,zavg"
+            sys.exit("Error")
+
+        #Kernel Bandwidth Distance for local stats
+        try:
+            kern_dist = args[args.index('-kern_dist')+1]
+        except:
+            print "Did not provide a bandwidth size for the kern_dist kernel"
+            sys.exit("Error")
+
+        #Out file with local stats
+        try:
+            outf = args[args.index('-outf')+1]
+        except:
+            print "You did not provide an outfile name for where scores will be written"
+            sys.exit("Error")
+
+        try:
+            grid_min = args[args.index('-grid_freq_min')+1]
+        except:
+            print "Did not provide a grid_freq_min argument... defaulting to 1"
+            grid_min = 0
+
+        try:
+            out_tbl = args[args.index('-out_tbl')+1]
+        except:
+            print "Did not provide a valid out table name"
+            out_tbl = "localspatstat_tmp"
+
+        #The number of cores you want to devote to multiprocessed Calcs
+        try:
+            cores = int(args[args.index('-cores')+1])
+        except:
+            print "Did not provide a -cores argument, defaulting to 1"
+            cores = 1
+
+
+        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, grid_min, cores)
+        
+
     ##########################Load a database with | Doc ID | Geometry | table#####################
     if mode_arg.lower() == "loaddb":
         import LoadDBV1 as loadDB
@@ -31,7 +117,6 @@ if len(sys.argv) >= 3:
             print "You did not provide a name for a document table to output"
             sys.exit("Error")
             
-
         try:
             conn = args[args.index('-conn')+1]
         except:
@@ -177,7 +262,7 @@ if len(sys.argv) >= 3:
         morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, int(grid_min), iterations, cores)
 
 
-    if "-help" in args:
+    if "--help" in args:
         print "TopoCluster Run Modes:"
         print "-mode loadDB"
         print "-mode calc_morans"
