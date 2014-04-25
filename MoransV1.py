@@ -128,6 +128,7 @@ def dict_chunker(adict, cores):
     list1 = []
     even = False
     lastit = 0
+    print "Dict size:", len(adict)
     n = len(adict)
     d = cores
     it = (n+d // 2) // d
@@ -268,6 +269,10 @@ def MoransCalc4_appears(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
 
     print "Number of processes spawning: ", len(id_lists)
 
+    print len(id_lists[0])
+    print len(id_lists[1])
+    print len(id_lists[2])
+
     map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, conn_info] for x in id_lists]
 
     returnlists = pool.map(CoreMoransCalcs, map_args)
@@ -348,6 +353,7 @@ def CoreMoransCalcs(x):
     m = 0
 
     for u in id_list:
+        print u
         #For each u, get its neighbors
         #In future add condition for handling other types of kernel functions
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
@@ -394,6 +400,8 @@ def CoreMoransCalcs(x):
             #print denom.sum(axis=0)
             #print sum_vectors.sum(axis=0)
             print datetime.datetime.now()
+
+    conn.close()
 
     return [total_denom_weights, numerator_sum, denomsum, N]
 
