@@ -395,8 +395,8 @@ def CoreMoransCalcs(x):
                 
                 #sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
         if m % 50 == 0:
-            print "Iteration: ", iteration
-            print "Left to go: ", len(id_list) - m
+            #print "Iteration: ", iteration
+            print "Process Reference: ",id_list[0] ,"Left to go: ", len(id_list) - m
             #print sum_vectors
             #print numerator.sum(axis=0)
             #print denom.sum(axis=0)
