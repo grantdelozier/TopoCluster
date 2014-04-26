@@ -688,7 +688,7 @@ def MoransCalc4_all(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores):
 
     morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
 
-    where i < len(morans_vector):
+    while i < len(morans_vector):
         morans_c[ref_dict2[i]] = morans_vector[i][0]
         i += 1
 
