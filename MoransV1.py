@@ -718,7 +718,7 @@ def MoransCalc3_all(x):
                 numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
 
         if m % 50 == 0:
-            print "Iteration ", iteration , "Left to go: ", len(id_list) - m
+            print "Iteration ", iteration , "Left to go: ", len(gid_dict) - m
             print datetime.datetime.now()
 
 
