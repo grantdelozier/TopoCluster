@@ -136,7 +136,7 @@ def chunkIt(seq, num):
   return out
 
 #Distributed process version of MonteCarloMorans2
-def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores=2):
+def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores):
     i = 0
     import multiprocessing
 
@@ -145,6 +145,23 @@ def MonteCarloMorans2_appears(gid_dict, means_dict, iterations, gtbl, kern_dist,
     mc_word_list = {}
     while i <= iterations: 
         mc_results = pool.map(MoransCalc3_appears, [[get_random_gid_dict(gid_dict),means_dict, gtbl, kern_dist, conn_info, i+x] for x in range(1,cores+1)])
+        
+        #mc_dict2 = MoransCalc3(random_gid_dict, means_dict, neighbor_ref)
+        for mc_dict in mc_results:
+            for w in mc_dict:
+                mc_word_list.setdefault(w, list()).append(mc_dict[w])
+        i += cores
+    return mc_word_list
+
+def MonteCarloMorans_all(gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores):
+    i = 0
+    import multiprocessing
+
+    pool = multiprocessing.Pool(cores)
+    
+    mc_word_list = {}
+    while i <= iterations: 
+        mc_results = pool.map(MoransCalc3_all, [[get_random_gid_dict(gid_dict), means_dict, gtbl, kern_dist, conn_info, i+x] for x in range(1,cores+1)])
         
         #mc_dict2 = MoransCalc3(random_gid_dict, means_dict, neighbor_ref)
         for mc_dict in mc_results:
@@ -629,6 +646,105 @@ def MoransCalc3_appears(x):
     conn.close()
     return morans_c
 
+#For use with MonteCarloMorans_all
+def MoransCalc3_all(x):
+    print "Starting Morans Calc in all mode"
+
+    gid_dict = x[0]
+
+    means_dict = x[1]
+
+    gtbl = x[2]
+
+    kern_dist = x[3]
+
+    conn_info = x[4]
+
+    iteration = x[5]
+
+    morans_c = {}
+
+    x = 1
+    m = 0
+
+    #First dictionary is word -> index, second is index -> word
+    ref_dict, ref_dict2 = buildRef(means_dict)   
+    mean_vector = getVector(means_dict, ref_dict)
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+    total_denom_weights = numpy.zeros((len(mean_vector),1))
+
+    N = numpy.zeros((len(mean_vector), 1))
+
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success"
+
+    cur = conn.cursor()
+
+    m = 0
+
+    one_vector = numpy.ones((len(mean_vector), 1))
+
+    for u in gid_dict:
+
+        neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
+        target_vector = getVector(gid_dict[u], ref_dict)
+
+        #print "Num neighbors: ", len(neighbors)
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+
+        
+        if len(s3) >1:
+            N += one_vector
+            denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
+        #print s3
+        m = m + 1
+        
+        for ui in neighbors:
+            gid = str(ui[0])
+            if gid in gid_dict and str(gid) != str(u):
+                            
+                w = float(ui[1])
+                            
+                #total_denom_weights += w
+
+                neighbor_vector = getVector(gid_dict[gid], ref_dict)
+
+                total_denom_weights += (w * one_vector)
+
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
+
+        if m % 50 == 0:
+            print "Iteration ", iteration , "Left to go: ", len(id_list) - m
+            print datetime.datetime.now()
+
+
+
+    i = 0
+
+    numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
+
+    denomsum = numpy.divide(denomsum, N)
+
+    denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
+
+    num_where = numpy.where(numerator_sum2==numerator_sum2, numerator_sum2, 0.0)
+
+    div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
+    
+    morans_vector_where = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
+
+    while i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        i += 1
+
+    return morans_c
+
 #Distributed Version of MoransCalc for all grid points (not just ones where word appears)
 def MoransCalc4_all(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores):
     print "Starting Morans Calc in all mode"
@@ -673,6 +789,7 @@ def MoransCalc4_all(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores):
         N += s[3]
 
     i = 0
+
 
     numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
 
@@ -1065,6 +1182,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
             mc_dict = MoransCalc4_all(min_gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
 
         if sig_test == False:
+
+            print "Beginning write of mc file"
+            
             wf = io.open(outf, 'w', encoding='utf-8')
 
             sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
@@ -1115,7 +1235,34 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 wf.close()
             if mean_method == "all":
                 print "Beginning Significance Tests"
-                #Need to complete paralellizable all method
+
+                mc_word_list = MonteCarloMorans_all(min_gid_dict, means_dict, iterations, gtbl, kern_dist, conn_info, cores)
+
+                print "Done Performing Monte Carlo Simulations"
+
+                print "Starting Significance Testing..."
+
+                wf = io.open(outf, 'w', encoding='utf-8')
+
+                sorted_mc_dict = sorted(mc_dict.items(), key=operator.itemgetter(1), reverse=True)
+
+                for mc in sorted_mc_dict:
+                    w = mc[0]
+
+                    samp_mean = numpy.mean(mc_word_list[w])
+                    std_dev = numpy.std(mc_word_list[w]) 
+                    sig_hat = std_dev / math.sqrt(iterations)
+                    pval = st.norm.sf((float(mc[1]) - samp_mean ) / sig_hat)
+                    pval2 = st.norm.sf((float(mc[1]) - samp_mean ) / std_dev)
+                    
+                    try:
+                        #In the future prevent words that don't pass this threshold from undergoing expensive moran's calculations
+                        #Should no longer be writing infrequent words... needs verification
+                        wf.write(w + '\t' + str(grid_freqs[w]) + '\t' + str(mc[1]) + '\t' + str(pval) + '\t' + str(pval2) + '\r\n')
+                    except:
+                        print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
+
+                wf.close()
                 
                 
                 

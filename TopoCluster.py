@@ -221,6 +221,7 @@ if len(sys.argv) >= 3:
             sig_test = args[args.index('-sig_test')+1]
             if str(sig_test).lower() != "false":
                 sig_test = True
+            else: sig_test = False
         except:
             print "You did not provide a significance test option, defaulting to false"
             sig_test = False
