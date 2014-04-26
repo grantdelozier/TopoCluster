@@ -732,7 +732,7 @@ def CoreMoransCalcs_all(x):
 
         
         if len(s3) >1:
-            N += appears_target_vector
+            N += one_vector
             denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
         #print s3
         m = m + 1
