@@ -629,70 +629,142 @@ def MoransCalc3_appears(x):
     conn.close()
     return morans_c
 
-#This version doesn't need a database connection to work        
-def MoransCalc3(gid_dict, means_dict, neighbor_ref):
+#Distributed Version of MoransCalc for all grid points (not just ones where word appears)
+def MoransCalc4_all(gid_dict, gtbl, means_dict, kern_dist, conn_info, cores):
+    print "Starting Morans Calc in all mode"
+
     morans_c = {}
-    total_denom_weights = 0
+
+    import multiprocessing
+
+    pool = multiprocessing.Pool(cores)
 
     x = 1
     m = 0
 
     #First dictionary is word -> index, second is index -> word
-    ref_dict, ref_dict2 = buildRef(means_dict)
-    
+    ref_dict, ref_dict2 = buildRef(means_dict)   
     mean_vector = getVector(means_dict, ref_dict)
-    sum_vectors = numpy.zeros((len(mean_vector),1))
-    
+    denomsum = numpy.zeros((len(mean_vector),1))
+    numerator_sum = numpy.zeros((len(mean_vector),1))
+    total_denom_weights = numpy.zeros((len(mean_vector),1))
 
-    for u in gid_dict:
-        #For each u, get its neighbors
-        #In future add condition for handling other types of kernel functions
+    N = numpy.zeros((len(mean_vector), 1))
+
+    id_lists = chunkIt(gid_dict.keys(), cores)
+
+    print "Number of processes spawning: ", len(id_lists)
+
+    print len(id_lists[0])
+
+    map_args = [[gid_dict, x, gtbl, mean_vector, denomsum, numerator_sum, total_denom_weights, N, kern_dist, ref_dict, conn_info] for x in id_lists]
+
+    returnlists = pool.map(CoreMoransCalcs_all, map_args)
+
+    print "Number of processes spawned: ", len(id_lists)
+    print "Number of processes returned: ", len(returnlists)
+
+    print "Adding multiprocessed results"
+    for s in returnlists:
+        
+        total_denom_weights += s[0]
+        numerator_sum += s[1]
+        denomsum += s[2]
+        N += s[3]
+
+    i = 0
+
+    numerator_sum2 = numpy.divide(numerator_sum, total_denom_weights)
+
+    denomsum = numpy.divide(denomsum, N)
+
+    denom_where = numpy.where(denomsum==denomsum, denomsum, 0.0)
+
+    num_where = numpy.where(numerator_sum2==numerator_sum2, numerator_sum2, 0.0)
+
+    div_vector = numpy.divide(numpy.where(num_where!=numpy.inf, num_where, 0.0), numpy.where(denom_where!=numpy.inf, denom_where, 0.0))
+    
+    morans_vector_where = numpy.where(div_vector==div_vector, div_vector, 0.0)
+
+    morans_vector = numpy.where(morans_vector_where!=numpy.inf, morans_vector_where, 0.0)
+
+    where i < len(morans_vector):
+        morans_c[ref_dict2[i]] = morans_vector[i][0]
+        i += 1
+
+    return morans_c
+
+def CoreMoransCalcs_all(x):
+    print "Starting branched Morans Calc"
+
+    
+    gid_dict = x[0]
+    id_list = x[1]
+    gtbl = x[2]
+    mean_vector = x[3]
+    denomsum = x[4]
+    numerator_sum = x[5]
+    total_denom_weights = x[6]
+    N = x[7]
+    kern_dist = x[8]
+    ref_dict = x[9]
+    conn_info = x[10]
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success"
+
+    cur = conn.cursor()
+
+    m = 0
+
+    one_vector = numpy.ones((len(mean_vector), 1))
+
+    for u in id_list:
+        #print u
+
         neighbors = KF.Uniform(gtbl, u, kern_dist, cur, "Only")
         target_vector = getVector(gid_dict[u], ref_dict)
+
         #print "Num neighbors: ", len(neighbors)
-        #s1 = set([str(x[0]) for x in neighbors])
-        #s3 = s1 & set(gid_dict.keys())
+        s1 = set([str(x[0]) for x in neighbors])
+        s3 = s1 & set(gid_dict.keys())
+
+        
+        if len(s3) >1:
+            N += appears_target_vector
+            denomsum += numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector ))
         #print s3
         m = m + 1
         x = 1
-        N = float(1)/float(len(gid_dict))
-        if len(neighbors) == 0:
-            pass
+        
         for ui in neighbors:
             gid = str(ui[0])
-            if gid in gid_dict:
+            if gid in gid_dict and str(gid) != str(u):
                             
                 w = float(ui[1])
                             
-                total_denom_weights += w
-                            
+                #total_denom_weights += w
+
                 neighbor_vector = getVector(gid_dict[gid], ref_dict)
-                            
-                numerator = w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector ))
-                            
-                denom = numpy.multiply(N, numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(target_vector, mean_vector )))
-                            
-                div_vector = numpy.divide(numerator, denom)
-                
-                sum_vectors += numpy.where(div_vector!=numpy.inf, div_vector, 0.0)
+
+                total_denom_weights += (w * one_vector)
+
+                numerator_sum += (w * numpy.multiply(numpy.subtract(target_vector, mean_vector ), numpy.subtract(neighbor_vector, mean_vector )))
+
         if m % 50 == 0:
-            print "Left to go: ", len(gid_dict) - m
-            #print sum_vectors
-            #print numerator.sum(axis=0)
-            #print denom.sum(axis=0)
-            #print sum_vectors.sum(axis=0)
+            print "Process Reference: ", id_list[0], "Left to go: ", len(id_list) - m
             print datetime.datetime.now()
 
-    i = 0
-    while i < len(sum_vectors):
-        morans_c[ref_dict2[i]] = sum_vectors[i][0]/float(total_denom_weights)
-        i += 1
-        
-    return morans_c
-                    
-        
-        
+    conn.close()
 
+    return [total_denom_weights, numerator_sum, denomsum, N]
+ 
+
+        
+    
+
+#Main method
 def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAggLMs, UseAggLMs, writeAggFile, sig_test, neighbor_ref_file, mean_method, grid_freq_min, iterations, cores):
 
     print "Morans Calc Parameters:"
@@ -982,14 +1054,15 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
         print "Done writing moran's scores to outfile"
 
-        if sig_test == True:
-            print "Beginning Significance Tests"
-            mc_word_list = MonteCarloMorans2(min_gid_dict, means_dict, neighbor_ref, iterations) 
+        #if sig_test == True:
+        #    print "Beginning Significance Tests"
+        #    mc_word_list = MonteCarloMorans2(min_gid_dict, means_dict, neighbor_ref, iterations) 
         
     elif neighbor_ref_file == "None":
         if mean_method == "appears":
             mc_dict = MoransCalc4_appears(min_gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
-        else: mc_dict = MoransCalc2(min_gid_dict, gtbl, means_dict, kern_dist, cur)
+        elif mean_method == "all":
+            mc_dict = MoransCalc4_all(min_gid_dict, gtbl, means_dict, kern_dist, conn_info, cores)
 
         if sig_test == False:
             wf = io.open(outf, 'w', encoding='utf-8')
@@ -1040,6 +1113,9 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                         print "problem writing string", mc[0], str(grid_freqs[mc[0]]), mc[1]
 
                 wf.close()
+            if mean_method == "all":
+                print "Beginning Significance Tests"
+                #Need to complete paralellizable all method
                 
                 
                 
