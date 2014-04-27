@@ -58,15 +58,26 @@ def chunkIt(seq, num):
 
   return out
 
-def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl):
+def GiCalcs(x):
 
-    print "Starting Calculation Branch ", id_list[0] , "\r\n"
+    gtbl = x[0]
+    dtbl = x[1]
+    id_list = x[2]
+    kern_dist = x[3]
+    kerntype = x[4]
+    conn_info = x[5]
+    docDict = x[6]
+    word_totals = x[7]
+    F_All = x[8]
+    out_tbl = x[9]
+
+    print "Starting Calculation Branch ", id_list[0]
 
     z = 0
 
     #Connecting to Database
     conn = psycopg2.connect(conn_info)
-    print "DB Connection Success ", id_list[0] , "\r\n"
+    print "DB Connection Success ", id_list[0]
 
     cur = conn.cursor()
 
@@ -78,8 +89,8 @@ def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_t
         allData = []
         if len(rows) > 0:
             pid_start = datetime.datetime.now()
-            #print "###########", i, "###############"
-            #print "Num Neighbors", len(rows)
+            print "###########", i, "###############"
+            print "Num Neighbors", len(rows)
 
             newsumDict = zero_dict
 
@@ -101,8 +112,8 @@ def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_t
                     
         #print datetime.datetime.now()
         if z % 50 == 0:
-            print "Left to go: ", (len(id_list) - z), " branch: ", id_list[0], "\r\n"
-            print datetime.datetime.now(), "\r\n"
+            print "Left to go: ", (len(id_list) - z), " branch: ", id_list[0]
+            print datetime.datetime.now()
 
     conn.commit()
     conn.close()
@@ -243,7 +254,9 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         cur.execute(SQL_fetchgrid, (kern_dist, ))
         grid = [x[0] for x in cur.fetchall()]
 
-        import threading
+        import multiprocessing
+
+        pool = multiprocessing.Pool(cores)
 
         id_lists = chunkIt(grid, cores)
 
@@ -252,15 +265,17 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         conn.close()
 
         print "Starting Actual Calcs"
-        print "Spawning ", len(id_lists), " threads"
+        print "Spawning ", len(id_lists), " processes"
 
-        for i in id_lists:
-            t = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
-            t.start()
+        pool.map(GiCalcs, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi] for i in id_lists)
 
-        print "All threads executing"
+        #for i in id_lists:
+        #    t2 = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
+        #    t2.start()
 
-    print "Finished Calculating... check table: "
+        print "Done Executing all processes"
+
+    print "Finished Calculating... check table: ", out_tbl
 
 
 
