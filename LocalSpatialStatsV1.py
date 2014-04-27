@@ -224,7 +224,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
         cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl_gi, ))
 
-        cur.execute("DELETE FROM %s ;" % out_tbl+'_gi')
+        cur.execute("DELETE FROM %s ;" % out_tbl_gi)
 
         word_totals = {}
         
@@ -254,7 +254,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Spawning ", len(id_lists), " threads"
 
         for i in id_lists:
-            t = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl+"_gi"])
+            t = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
             t.start()
 
         print "All threads executed"
