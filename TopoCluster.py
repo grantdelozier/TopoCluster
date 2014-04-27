@@ -89,8 +89,31 @@ if len(sys.argv) >= 3:
             print "Did not provide a -cores argument, defaulting to 1"
             cores = 1
 
+        #Do you want to specify a whitelist to use for words (restircted vs any)
+        try:
+            listuse = args[args.index('-listuse')+1]
+        except:
+            print "Did not provide a valid listuse option, defaultign to any"
+            listuse = "any"
 
-        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, grid_min, cores)
+
+        #Whitelist File path
+        try:
+            whitelist_file = args[args.index('-whitelist_file')+1]
+        except:
+            print "Did not provide a -whitelist_file option, defaulting to one"
+            whitelist_file = "none"
+            listuse = "any"
+
+        #Kerntype for kernel function (uniform, linear, epanech)
+        try:
+            kerntype = args[args.index('-kerntype')+1]
+        except:
+            print "Did not provide a valid kerntype option, defaulting to uniform"
+            kerntype = "uniform"
+
+
+        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores)
         
 
     ##########################Load a database with | Doc ID | Geometry | table#####################

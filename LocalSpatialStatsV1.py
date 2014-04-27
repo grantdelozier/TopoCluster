@@ -47,7 +47,67 @@ class Document:
             F_Prob[word] = (float(F_Freq[word])/float(total_words))
             self.Feature_Prob = F_Prob
 
-def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintype, grid_freq_min, cores):
+def chunkIt(seq, num):
+  avg = len(seq) / float(num)
+  out = []
+  last = 0.0
+
+  while last < len(seq):
+    out.append(seq[int(last):int(last + avg)])
+    last += avg
+
+  return out
+
+def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl):
+
+    print "Starting Calculation Branch ", id_list[0] , "\r\n"
+
+    z = 0
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success ", id_list[0] , "\r\n"
+
+    cur = conn.cursor()
+
+    zero_dict = dict([(x, 0.0) for x in F_All])
+
+    for i in id_list:
+        z += 1
+        rows = KF.Uniform(ptbl, i, kern_dist, cur, gtbl)
+        allData = []
+        if len(rows) > 0:
+            pid_start = datetime.datetime.now()
+            #print "###########", i, "###############"
+            #print "Num Neighbors", len(rows)
+
+            newsumDict = zero_dict
+
+            for p in rows:
+                uid = p[0]
+                weight = p[1]
+                for wd in docDict[uid]:
+                    newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * docDict[uid][wd])
+
+            for w in newsumDict:
+                gi_stat = newsumDict[w]/word_totals[w]
+                allData.append([i, w, gi_stat])
+
+            args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
+                
+            qstr = "INSERT INTO %s VALUES " % out_tbl
+            cur.execute(qstr + args_str)
+                    
+        #print datetime.datetime.now()
+        if z % 50 == 0:
+            print "Left to go: ", (len(id_list) - z), " branch: ", id_list[0], "\r\n"
+            print datetime.datetime.now(), "\r\n"
+
+    conn.commit()
+    conn.close()
+
+###Main Method###
+def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_freq_min, cores):
     print "Local Spatial Statistics Parameters"
     print "Train file: ", f
     print "Document Table Name: ", dtbl
@@ -57,10 +117,14 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintyp
     print "Local Statistic Outfile Name: ", outf
     print "Local Statistic Output Table Name: ", out_tbl
     print "Distance Bandwidth of Kernel Function: ", kern_dist
+    print "Type of kernel function being used: ", kentype
     print "minimum number of grid points word must appear in: ", grid_freq_min
     print "Which Statistics are being calculated: ", statistic
 
-    print "Number of cores you want to devote to multiprocessing (recommended 1 less than max on system):", cores
+    print "Calculating Statistics for which words: ", listuse
+    print "Location of whitelist_file: ", whitelist_file
+
+    print "Number of cores you want to devote to multiprocessing (recommended 1/2 the number that exist on the system):", cores
     
     filename = f[f.rfind('/')+1:]
     print filename
@@ -81,6 +145,13 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintyp
     conn = psycopg2.connect(conn_info)
     print "DB Connection Success"
 
+    if listuse == 'restricted':
+        F_All = set()
+        with io.open(whitelist_file, 'r', encoding='utf-8') as w:
+            whitelist = set([x.strip() for x in w])
+            
+    print len(whitelist)
+
     #Read in the trainfile data/calc word frequencies
     with io.open(f, 'r', encoding='utf-8') as f:
         for person in f:
@@ -97,11 +168,18 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintyp
                     longit = row[1].split(',')[1]
                     if UseAggLMs == False:
                         F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[2].split(" "))
-                        F_All |= set(F_Freq.keys())
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
                         newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
                         docDict[userID] = newDoc
                     elif UseAggLMs == True:
                         F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
                         docDict[userID] = F_Freq
                 elif traintype == "wiki":
                     userID = row[0]
@@ -110,9 +188,16 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintyp
                     longit = row[2].split(',')[1]
                     if UseAggLMs == False:
                         F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                        F_All |= set(F_Freq.keys())
+                        #F_All |= set(F_Freq.keys())
                         newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
                         docDict[userID] = newDoc
+                    if UseAggLMs == True:
+                        print "Use Agg LM mode for wikipedia dataset not implemented"
+                        sys.exit("Error")
             except:
                 print "@@@@@error reading user@@@@@@"
                 print row
@@ -128,5 +213,58 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, traintyp
     print read_time_end - read_time_begin
 
     print "Number of Documents:", len(docDict)
+
+    cur = conn.cursor()
+
+    if statistic.lower() == "gi":
+
+        print "Begining Gi* statistic calculation mode"
+
+        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl+'_gi', ))
+
+        cur.execute("DELETE FROM %s ;" % out_tbl+'_gi')
+
+        word_totals = {}
+        
+        print "Generating Probability Sums for each word"
+        
+        for doc in docDict:
+            for word in docDict[doc]:
+                word_totals[word] = word_totals.get(word, 0.0) + docDict[doc][word]
+
+        print "Done Calculating Word Totals"
+
+        z = 0
+
+        SQL_fetchgrid = "SELECT DISTINCT p1.gid from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
+        cur.execute(SQL_fetchgrid, (agg_dist, ))
+        grid = [x[0] for x in cur.fetchall()]
+
+        import threading
+
+        id_lists = chunkIt(grid, cores)
+
+        print "Closing Existing DB Connection..."
+        conn.commit()
+        conn.close()
+
+        print "Starting Actual Calcs"
+        print "Spawning ", len(id_lists), " threads"
+
+        for i in id_lists:
+            t = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl+"_gi"])
+            t.start()
+
+        print "All threads executed"
+
+    print "Finished Calculating... check table: "
+
+
+
+
+
+    
+
+    
 
     
