@@ -117,7 +117,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
     print "Local Statistic Outfile Name: ", outf
     print "Local Statistic Output Table Name: ", out_tbl
     print "Distance Bandwidth of Kernel Function: ", kern_dist
-    print "Type of kernel function being used: ", kentype
+    print "Type of kernel function being used: ", kerntype
     print "minimum number of grid points word must appear in: ", grid_freq_min
     print "Which Statistics are being calculated: ", statistic
 
