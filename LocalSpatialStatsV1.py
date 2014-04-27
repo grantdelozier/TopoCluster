@@ -225,6 +225,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
     print read_time_end - read_time_begin
 
     print "Number of Documents:", len(docDict)
+    print "Number of Words Calculating for: ", len(F_All)
 
     cur = conn.cursor()
 
