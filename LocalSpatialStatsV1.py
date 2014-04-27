@@ -157,52 +157,52 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         for person in f:
             #print "####NEW Person####"
             #print userID, latit, longit
-            #try:
-            row = person.strip().split('\t')
-            #print row[0]
-
-            if traintype == "twitter":
+            try:
+                row = person.strip().split('\t')
                 #print row[0]
-                userID = row[0]
-                latit = row[1].split(',')[0]
-                longit = row[1].split(',')[1]
-                if UseAggLMs == False:
-                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[2].split(" "))
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    newDoc = Document(userID, latit, longit, F_Freq, filename)
-                    docDict[userID] = newDoc
-                elif UseAggLMs == True:
-                    F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    docDict[userID] = F_Freq
-            elif traintype == "wiki":
-                userID = row[0]
-                page_name = row[1]
-                latit = row[2].split(',')[0]
-                longit = row[2].split(',')[1]
-                if UseAggLMs == False:
-                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                    #F_All |= set(F_Freq.keys())
-                    newDoc = Document(userID, latit, longit, F_Freq, filename)
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    docDict[userID] = newDoc
-                if UseAggLMs == True:
-                    print "Use Agg LM mode for wikipedia dataset not implemented"
-                    sys.exit("Error")
-            #except:
-            #    print "@@@@@error reading user@@@@@@"
-            #    print row
-            #    print z
-            #    sys.exit("Error")
+
+                if traintype == "twitter":
+                    #print row[0]
+                    userID = row[0]
+                    latit = row[1].split(',')[0]
+                    longit = row[1].split(',')[1]
+                    if UseAggLMs == False:
+                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[2].split(" "))
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
+                        newDoc = Document(userID, latit, longit, F_Freq, filename)
+                        docDict[userID] = newDoc
+                    elif UseAggLMs == True:
+                        F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
+                        docDict[userID] = F_Freq
+                elif traintype == "wiki":
+                    userID = row[0]
+                    page_name = row[1]
+                    latit = row[2].split(',')[0]
+                    longit = row[2].split(',')[1]
+                    if UseAggLMs == False:
+                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
+                        #F_All |= set(F_Freq.keys())
+                        newDoc = Document(userID, latit, longit, F_Freq, filename)
+                        if listuse == 'any':
+                            F_All |= set(F_Freq.keys())
+                        if listuse == 'restricted':
+                            F_All |= set([j for j in F_Freq if j in whitelist])
+                        docDict[userID] = newDoc
+                    if UseAggLMs == True:
+                        print "Use Agg LM mode for wikipedia dataset not implemented"
+                        sys.exit("Error")
+            except:
+                print "@@@@@error reading user@@@@@@"
+                print row
+                print z
+                #sys.exit("Error")
             z += 1
             if z % 5000 == 0:
                 print z
@@ -220,7 +220,9 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
         print "Begining Gi* statistic calculation mode"
 
-        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl+'_gi', ))
+        out_tbl_gi = out_tbl + "_gi"
+
+        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl_gi, ))
 
         cur.execute("DELETE FROM %s ;" % out_tbl+'_gi')
 
