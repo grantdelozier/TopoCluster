@@ -44,7 +44,7 @@ class Document:
     def CalcUnigramProb(self, F_Freq):
         F_Prob = {}
         for word in F_Freq:
-            F_Prob[word] = (float(F_Freq[word])/float(total_words))
+            F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
         self.Feature_Prob = F_Prob
 
 def chunkIt(seq, num):
@@ -202,7 +202,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                 print "@@@@@error reading user@@@@@@"
                 print row
                 print z
-                #sys.exit("Error")
+                sys.exit("Error")
             z += 1
             if z % 5000 == 0:
                 print z
