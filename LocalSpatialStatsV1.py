@@ -150,7 +150,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         with io.open(whitelist_file, 'r', encoding='utf-8') as w:
             whitelist = set([x.strip() for x in w])
             
-    print len(whitelist)
+        print "Num Words in whitelist: ", len(whitelist)
 
     #Read in the trainfile data/calc word frequencies
     with io.open(f, 'r', encoding='utf-8') as f:
