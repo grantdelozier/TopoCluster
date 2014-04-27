@@ -68,7 +68,8 @@ if len(sys.argv) >= 3:
             outf = args[args.index('-outf')+1]
         except:
             print "You did not provide an outfile name for where scores will be written"
-            sys.exit("Error")
+            outf = "tmp.txt"
+            #sys.exit("Error")
 
         try:
             grid_min = args[args.index('-grid_freq_min')+1]
