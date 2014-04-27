@@ -27,7 +27,7 @@ class Document:
     outside_word_prob = 0
     fileFrom = ""
 
-    def __init__(self, ID, latit, longit, F_Freq, file_from, aggLM=False):
+    def __init__(self, ID, latit, longit, F_Freq, file_from, listuse, whitelist, aggLM=False):
         self.userID = ID
         self.userLat = latit
         self.userLong = longit
@@ -39,12 +39,16 @@ class Document:
                 tw += int(F_Freq[f])
         self.total_words = tw
         if aggLM==False:
-            self.CalcUnigramProb(F_Freq)
+            self.CalcUnigramProb(F_Freq, listuse, whitelist)
 
-    def CalcUnigramProb(self, F_Freq):
+    def CalcUnigramProb(self, F_Freq, listuse, whitelist):
         F_Prob = {}
         for word in F_Freq:
-            F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
+            if listuse == "restricted":
+                if word in whitelist:
+                    F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
+            else:
+                F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
         self.Feature_Prob = F_Prob
 
 def chunkIt(seq, num):
@@ -157,6 +161,8 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
     conn = psycopg2.connect(conn_info)
     print "DB Connection Success"
 
+    whitelist = set()
+
     if listuse == 'restricted':
         F_All = set()
         with io.open(whitelist_file, 'r', encoding='utf-8') as w:
@@ -184,7 +190,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                             F_All |= set(F_Freq.keys())
                         if listuse == 'restricted':
                             F_All |= set([j for j in F_Freq if j in whitelist])
-                        newDoc = Document(userID, latit, longit, F_Freq, filename)
+                        newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
                         docDict[userID] = newDoc.Feature_Prob
                     elif UseAggLMs == True:
                         F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
@@ -201,7 +207,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                     if UseAggLMs == False:
                         F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
                         #F_All |= set(F_Freq.keys())
-                        newDoc = Document(userID, latit, longit, F_Freq, filename)
+                        newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
                         if listuse == 'any':
                             F_All |= set(F_Freq.keys())
                         if listuse == 'restricted':
