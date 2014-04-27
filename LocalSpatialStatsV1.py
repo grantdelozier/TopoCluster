@@ -90,8 +90,9 @@ def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_t
                     newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * docDict[uid][wd])
 
             for w in newsumDict:
-                gi_stat = newsumDict[w]/word_totals[w]
-                allData.append([i, w, gi_stat])
+                if len(w) <= 30:
+                    gi_stat = newsumDict[w]/word_totals[w]
+                    allData.append([i, w, gi_stat])
 
             args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
                 
