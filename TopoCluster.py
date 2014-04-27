@@ -9,7 +9,7 @@ if len(sys.argv) >= 3:
 
     ##########################Local Spatial Stastics Mode (Gi*, Zavg)#######################
     if mode_arg.lower() == "local_stats":
-        import LocalSpatialStatsV1.py as LSS
+        import LocalSpatialStatsV1 as LSS
         print "Starting Local Spatial Statistics"
 
         #Trainfile / devfile / test file
