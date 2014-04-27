@@ -107,6 +107,11 @@ def GiCalcs(x):
             for w in newsumDict:
                 if len(w) <= 30:
                     gi_stat = newsumDict[w]/word_totals[w]
+                    if newsumDict[w] > word_totals[w]:
+                        print "Broken Entry ", w
+                        print word_totals[w]
+                        print newsumDict[w]
+                        print gi_stat
                     allData.append([i, w, gi_stat])
 
             args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
