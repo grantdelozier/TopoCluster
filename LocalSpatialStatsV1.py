@@ -39,7 +39,7 @@ class Document:
                 tw += int(F_Freq[f])
         self.total_words = tw
         if aggLM==False:
-            self.CalcUnigramProb(self, F_Freq)
+            self.CalcUnigramProb(F_Freq)
 
     def CalcUnigramProb(self, F_Freq):
         F_Prob = {}
