@@ -85,7 +85,7 @@ def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_t
 
             for p in rows:
                 uid = p[0]
-                weight = p[1]
+                weight = float(p[1])
                 for wd in docDict[uid]:
                     newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * docDict[uid][wd])
 
@@ -257,7 +257,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             t = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
             t.start()
 
-        print "All threads executed"
+        print "All threads executing"
 
     print "Finished Calculating... check table: "
 
