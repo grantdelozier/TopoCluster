@@ -43,7 +43,7 @@ if len(sys.argv) >= 3:
 
         #Postgresql connection information
         try:
-            conn = args[args.index('-conn')+1]
+            conn_info = args[args.index('-conn')+1]
         except:
             print "Problem parsing the connection information provided"
             sys.exit("Error")
@@ -102,7 +102,7 @@ if len(sys.argv) >= 3:
         try:
             whitelist_file = args[args.index('-whitelist_file')+1]
         except:
-            print "Did not provide a -whitelist_file option, defaulting to one"
+            print "Did not provide a -whitelist_file option, defaulting to none"
             whitelist_file = "none"
             listuse = "any"
 
