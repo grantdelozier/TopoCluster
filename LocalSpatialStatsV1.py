@@ -239,7 +239,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         z = 0
 
         SQL_fetchgrid = "SELECT DISTINCT p1.gid from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
-        cur.execute(SQL_fetchgrid, (agg_dist, ))
+        cur.execute(SQL_fetchgrid, (kern_dist, ))
         grid = [x[0] for x in cur.fetchall()]
 
         import threading
