@@ -96,7 +96,7 @@ def GiCalcs(x):
             #print "###########", i, "###############"
             #print "Num Neighbors", len(rows)
 
-            newsumDict = zero_dict
+            newsumDict = dict([(x, 0.0) for x in F_All])
 
             for p in rows:
                 uid = p[0]
