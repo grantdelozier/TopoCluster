@@ -173,7 +173,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                         if listuse == 'restricted':
                             F_All |= set([j for j in F_Freq if j in whitelist])
                         newDoc = Document(userID, latit, longit, F_Freq, filename)
-                        docDict[userID] = newDoc
+                        docDict[userID] = newDoc.Feature_Prob
                     elif UseAggLMs == True:
                         F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
                         if listuse == 'any':
@@ -194,7 +194,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                             F_All |= set(F_Freq.keys())
                         if listuse == 'restricted':
                             F_All |= set([j for j in F_Freq if j in whitelist])
-                        docDict[userID] = newDoc
+                        docDict[newDoc.userID] = newDoc.Feature_Prob
                     if UseAggLMs == True:
                         print "Use Agg LM mode for wikipedia dataset not implemented"
                         sys.exit("Error")
