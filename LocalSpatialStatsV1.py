@@ -45,7 +45,7 @@ class Document:
         F_Prob = {}
         for word in F_Freq:
             F_Prob[word] = (float(F_Freq[word])/float(total_words))
-            self.Feature_Prob = F_Prob
+        self.Feature_Prob = F_Prob
 
 def chunkIt(seq, num):
   avg = len(seq) / float(num)
@@ -172,7 +172,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                             F_All |= set(F_Freq.keys())
                         if listuse == 'restricted':
                             F_All |= set([j for j in F_Freq if j in whitelist])
-                        newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                        newDoc = Document(userID, latit, longit, F_Freq, filename)
                         docDict[userID] = newDoc
                     elif UseAggLMs == True:
                         F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
@@ -189,7 +189,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                     if UseAggLMs == False:
                         F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
                         #F_All |= set(F_Freq.keys())
-                        newDoc = Document(userID, latit, longit, F_Freq, filename, UseAggLMs)
+                        newDoc = Document(userID, latit, longit, F_Freq, filename)
                         if listuse == 'any':
                             F_All |= set(F_Freq.keys())
                         if listuse == 'restricted':
@@ -202,7 +202,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                 print "@@@@@error reading user@@@@@@"
                 print row
                 print z
-                break
+                #sys.exit("Error")
             z += 1
             if z % 5000 == 0:
                 print z
