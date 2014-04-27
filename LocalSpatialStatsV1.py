@@ -267,7 +267,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Starting Actual Calcs"
         print "Spawning ", len(id_lists), " processes"
 
-        pool.map(GiCalcs, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi] for i in id_lists)
+        pool.map(GiCalcs, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi] for i in id_lists])
 
         #for i in id_lists:
         #    t2 = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
