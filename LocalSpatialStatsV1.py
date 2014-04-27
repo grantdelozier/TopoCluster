@@ -74,7 +74,7 @@ def GiCalcs(gtbl, dtbl, id_list, kern_dist, kerntype, conn_info, docDict, word_t
 
     for i in id_list:
         z += 1
-        rows = KF.Uniform(ptbl, i, kern_dist, cur, gtbl)
+        rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
         allData = []
         if len(rows) > 0:
             pid_start = datetime.datetime.now()
