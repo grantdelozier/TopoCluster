@@ -93,8 +93,8 @@ def GiCalcs(x):
         allData = []
         if len(rows) > 0:
             pid_start = datetime.datetime.now()
-            print "###########", i, "###############"
-            print "Num Neighbors", len(rows)
+            #print "###########", i, "###############"
+            #print "Num Neighbors", len(rows)
 
             newsumDict = zero_dict
 
@@ -115,7 +115,7 @@ def GiCalcs(x):
             cur.execute(qstr + args_str)
                     
         #print datetime.datetime.now()
-        if z % 50 == 0:
+        if z % 30 == 0:
             print "Left to go: ", (len(id_list) - z), " branch: ", id_list[0]
             print datetime.datetime.now()
 
