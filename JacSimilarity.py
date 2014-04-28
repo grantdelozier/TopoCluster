@@ -65,7 +65,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
 
     print "Done calculating synset similarity scores"
 
-    RandWordDist = RandomWord_SimDistribution(syn_link, cur, randits, stat_tbl)
+    RandWordDist = RandomWord_SimDistribution(syn_link, cur, randits, stat_tbl, appearingwords)
 
     std_dev = numpy.std(RandWordDist)
     pop_mean = numpy.mean(RandWordDist)
