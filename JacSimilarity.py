@@ -23,7 +23,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
             row = line.strip().split('\t')
             for i in range(0, len(row)):
                 linklist = [row[j] for j in range(0, len(row)) if j!=i]
-                syn_link.setdefault(row[i], list()).append(linklist)
+                syn_link.setdefault(row[i], list()).extend(linklist)
 
     print syn_link["abode"]
 
