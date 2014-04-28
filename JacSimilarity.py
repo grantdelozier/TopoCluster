@@ -43,7 +43,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
     m = 0
 
     cur.execute("SELECT DISTINCT word from %s;" % stat_tbl)
-    appearingwords = [w for w in cur.fetchall()]
+    appearingwords = [w[0] for w[0] in cur.fetchall()]
 
     for s in syn_link:
         #print s
