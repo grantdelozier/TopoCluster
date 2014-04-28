@@ -59,7 +59,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
                         simscore = WeightedJac(s_dict, s2_dict)
                         sim_dict[s+'|'+s2] = simscore
         m += 1
-        if m % 100 == 0:
+        if m % 200 == 0:
             print "Left to go: ", len(syn_link) - m
             print datetime.datetime.now()
 
@@ -91,7 +91,7 @@ def WeightedJac(d1, d2):
     maxsum = sum([max(v, d2[k]) for k,v in d1.items()])
     return (minsum/maxsum)
     
-def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingswords):
+def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     print "Creating Random Word Distributions"
     x = 0
     m = 0
@@ -104,7 +104,7 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingswords)
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r1]
         m += 1
-        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1] and s1 in appearingwords and s2 in appearingswords:
+        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1] and s1 in appearingwords and s2 in appearingwords:
             cur.execute(SQL_Fetch, (s1, ))
             s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             cur.execute(SQL_Fetch, (s2, ))
