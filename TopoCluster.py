@@ -149,6 +149,55 @@ if len(sys.argv) >= 3:
 
         loadDB.Load(f, dtbl, conn, traintype.lower())
 
+    ################Weighted Jaccard Similarity##################
+    if mode_arg.lower() == "jsim":
+        print "Starting Weighted Jaccard Similarity Tests"
+        import JacSimilarity as JS
+
+        #Statistics Table (Zavg/Gi*)
+        try:
+            stat_tbl = args[args.index("-stat_tbl")+1]
+        except:
+            print "You did not provide a name for a statistics table to use"
+            sys.exit("Error")
+
+        #Synset file
+        try:
+            synfile = args[args.index("-synfile")+1]
+        except:
+            print "You did not provide a file name to retrieve synsets from"
+            sys.exit("Error")
+
+        #Out file with p values
+        try:
+            outf = args[args.index('-outf')+1]
+        except:
+            print "You did not provide an outfile name for where scores will be written"
+            sys.exit("Error")
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        #How many random word comparisons to make in building similarity score distribution
+        #Used to derive P-value for given pair
+        try:
+            randits = args[args.index('-randits')+1]
+        except:
+            print "Did not provide -randits argument, defaulting to 100"
+            randits = 100
+
+        #Select a certain percentile of the obs to compare... not yet implemented
+        try:
+            pct = args[args.index('-pct')+1]
+        except:
+            pct = "Not Implemented"
+
+        JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf)
+
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans
