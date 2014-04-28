@@ -59,7 +59,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
                         simscore = WeightedJac(s_dict, s2_dict)
                         sim_dict[s+'|'+s2] = simscore
         m += 1
-        if m % 50 == 0:
+        if m % 100 == 0:
             print "Left to go: ", len(syn_link) - m
             print datetime.datetime.now()
 
