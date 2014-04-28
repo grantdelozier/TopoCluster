@@ -121,8 +121,8 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
             s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             randJacScores.append(WeightedJac(s1_dict, s2_dict))            
             y += 1
-            if x % 10 == 0:
-                print "Random Iteration ", x
+            if y % 10 == 0:
+                print "Random Iteration ", y
                 print datetime.datetime.now()
     if m >= len(keylist):
         print "Random searches exceeded 2 x keylist"
