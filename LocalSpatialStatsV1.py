@@ -300,6 +300,8 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
     cur = conn.cursor()
 
+
+    print statistic.lower()
     if statistic.lower() == "zavg":
 
         print "Beginning Zavg statistic calculation mode"
