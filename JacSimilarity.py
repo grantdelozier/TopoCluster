@@ -95,15 +95,15 @@ def WeightedJac(d1, d2):
     
 def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     print "Creating Random Word Distributions"
-    x = 0
+    y = 0
     m = 0
     SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
     keylist = set([x for x in synlist.keys() if x in appearingwords])
     print len(appearingwords)
     print "keylist length: ", len(keylist)
-    print (x < randits)
+    print (y < randits)
     randJacScores = []
-    while x < randits:
+    while y < randits:
         if m > len(keylist)*2:
             break
         r1 = random.randint(0, len(keylist)-1)
@@ -111,7 +111,7 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r2]
         #print r2
-        print s1, s2
+        #print s1, s2
         m += 1
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
             #print s1, s2
@@ -120,7 +120,7 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
             cur.execute(SQL_Fetch, (s2, ))
             s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             randJacScores.append(WeightedJac(s1_dict, s2_dict))            
-            x += 1
+            y += 1
             if x % 10 == 0:
                 print "Random Iteration ", x
                 print datetime.datetime.now()
