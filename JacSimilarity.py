@@ -47,7 +47,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
         s_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
         if len(s_dict) > 0:
             for s2 in syn_link[s]:
-                if s2+'|'+s not in sim_dict
+                if s2+'|'+s not in sim_dict:
                     #print "Comparing - ", s, " vs ", s2
                     cur.execute(SQL_Fetch, (s2, ))
                     s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
