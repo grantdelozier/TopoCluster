@@ -108,10 +108,10 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r2]
         #print r2
-        print s1, s2
+        #print s1, s2
         m += 1
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
-            print s1, s2
+            #print s1, s2
             cur.execute(SQL_Fetch, (s1, ))
             s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             cur.execute(SQL_Fetch, (s2, ))
