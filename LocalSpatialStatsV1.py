@@ -89,7 +89,10 @@ def GiCalcs(x):
 
     for i in id_list:
         z += 1
-        rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
+        if kerntype.lower() == "uniform":
+            rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
+        elif kerntype.lower() == "epanech":
+            rows = KF.Epanech(dtbl, i, kern_dist, cur, gtbl)
         allData = []
         if len(rows) > 0:
             pid_start = datetime.datetime.now()
@@ -153,7 +156,10 @@ def ZavgCalc(x):
 
     for i in id_list:
         z += 1
-        rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
+        if kerntype.lower() == "uniform":
+            rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
+        elif kerntype.lower() == "epanech":
+            rows = KF.Epanech(dtbl, i, kern_dist, cur, gtbl)
         allData = []
         if len(rows) > 0:
             pid_start = datetime.datetime.now()
@@ -331,7 +337,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             zerolist = [0.0 for x in range(0, numzeros)]
             alist.extend(zerolist)
             word_stds[word] = numpy.std(alist)
-            word_means[word] = numpy.mean(alist)
+            word_means[word] = sum(alist)/float(len(docDict))
 
         print "Done calculating means and std deviations"
 
