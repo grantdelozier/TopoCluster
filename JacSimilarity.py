@@ -98,16 +98,17 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     x = 0
     m = 0
     SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
-    keylist = synlist.keys()
+    keylist = set([x for x in synlist.keys() if x in appearingwords])
     randJacScores = []
     while x < randits and m < len(keylist)*2:
         r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r2]
-        #print s1, s2
+        print s1, s2
         m += 1
-        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1] and s1 in appearingwords and s2 in appearingwords:
+        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
+            print s1, s2
             cur.execute(SQL_Fetch, (s1, ))
             s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             cur.execute(SQL_Fetch, (s2, ))
