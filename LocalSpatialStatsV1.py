@@ -127,7 +127,7 @@ def GiCalcs(x):
     conn.commit()
     conn.close()
 
-def ZavgCalcs(x):
+def ZavgCalc(x):
 
     gtbl = x[0]
     dtbl = x[1]
