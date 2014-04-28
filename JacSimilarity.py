@@ -67,6 +67,8 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
 
     RandWordDist = RandomWord_SimDistribution(syn_link, cur, randits, stat_tbl, appearingwords)
 
+    print len(RandWordDist)
+
     std_dev = numpy.std(RandWordDist)
     pop_mean = numpy.mean(RandWordDist)
     sig_hat = std_dev / math.sqrt(randits)
@@ -98,7 +100,7 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
     keylist = synlist.keys()
     randJacScores = []
-    while x < randits and m < len(keylist):
+    while x < randits and m < len(keylist)*2:
         r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
@@ -114,6 +116,9 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
             if x % 10 == 0:
                 print "Random Iteration ", x
                 print datetime.datetime.now()
+
+    if m >= len(keylist):
+        print "Random searches exceeded 2 x keylist"
     print "Done Creating Random Word Distributions"
     return randJacScores
 
