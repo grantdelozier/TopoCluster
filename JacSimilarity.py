@@ -105,6 +105,7 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r1]
+        print s1, s2
         m += 1
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1] and s1 in appearingwords and s2 in appearingwords:
             cur.execute(SQL_Fetch, (s1, ))
