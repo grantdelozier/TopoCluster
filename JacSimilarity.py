@@ -98,9 +98,9 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl):
     keylist = synlist.keys()
     randJacScores = []
     while x < randits:
-        r1 = random.randint(0, len(keylist))
+        r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
-        r2 = random.randint(0, len(keylist))
+        r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r1]
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
             cur.execute(SQL_Fetch, (s1, ))
