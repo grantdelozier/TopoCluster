@@ -78,11 +78,11 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
     print "Writing to outfile"
 
     for p in sim_dict:
-        pval1 = st.norm.sf((sim_dict[p] - mean) / std_dev)
-        pval2 = st.norm.sf((sim_dict[p] - mean) / sighat)
-        pval3 = st.norm.sf((mean - sim_dict[p]) / std_dev)
-        pval4 = st.norm.sf((mean - sim_dict[p]) / sighat)
-        print p, sim_dict[p], pval1, pval2, pval3, pval4
+        pval1 = st.norm.sf((sim_dict[p] - pop_mean) / std_dev)
+        pval2 = st.norm.sf((sim_dict[p] - pop_mean) / sighat)
+        pval3 = st.norm.sf((pop_mean - sim_dict[p]) / std_dev)
+        pval4 = st.norm.sf((pop_mean - sim_dict[p]) / sighat)
+        #print p, sim_dict[p], pval1, pval2, pval3, pval4
         openw.write(p +'\t' + str(sim_dict[p]) + '\t' + str(pop_mean) + '\t' + str(pval1) + '\t'+ str(pval2) + '\t' + str(pval3) + '\t' + str(pval4) + '\r\n')
 
     openw.close()
