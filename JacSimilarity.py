@@ -40,11 +40,11 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
     print "Calculating Similarity Scores for elements in synsets"
     
 
-    for s in synsets:
+    for s in syn_link:
         #print s
         cur.execute(SQL_Fetch, (s, ))
         s_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
-        for s2 in synsets[s]:
+        for s2 in syn_link[s]:
             #print "Comparing - ", s, " vs ", s2
             cur.execute(SQL_Fetch, (s2, ))
             s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
