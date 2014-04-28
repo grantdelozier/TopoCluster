@@ -5,7 +5,7 @@ import psycopg2
 import datetime
 import io
 import math
-#import numpy
+import numpy
 
 from collections import Counter
 
@@ -127,6 +127,66 @@ def GiCalcs(x):
     conn.commit()
     conn.close()
 
+def ZavgCalcs(x):
+
+    gtbl = x[0]
+    dtbl = x[1]
+    id_list = x[2]
+    kern_dist = x[3]
+    kerntype = x[4]
+    conn_info = x[5]
+    docDict = x[6]
+    word_means = x[7]
+    word_stds = x[8]
+    F_All = x[9]
+    out_tbl = x[10]
+
+    print "Starting Calculation Branch ", id_list[0]
+
+    z = 0
+
+    #Connecting to Database
+    conn = psycopg2.connect(conn_info)
+    print "DB Connection Success ", id_list[0]
+
+    cur = conn.cursor()
+
+    for i in id_list:
+        z += 1
+        rows = KF.Uniform(dtbl, i, kern_dist, cur, gtbl)
+        allData = []
+        if len(rows) > 0:
+            pid_start = datetime.datetime.now()
+            #print "###########", i, "###############"
+            #print "Num Neighbors", len(rows)
+
+            newsumDict = dict([(x, 0.0) for x in F_All])
+
+            for p in rows:
+                uid = p[0]
+                weight = float(p[1])
+                for wd in docDict[uid]:
+                    newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * ((docDict[uid][wd]-word_means[wd])/word_stds[wd]))
+
+            for w in newsumDict:
+                if len(w) <= 30:
+                    allData.append([i, w, newsumDict[wd]/float(len(rows))])
+            
+            args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
+                
+            qstr = "INSERT INTO %s VALUES " % out_tbl
+            cur.execute(qstr + args_str)
+                    
+        #print datetime.datetime.now()
+        if z % 30 == 0:
+            print "Left to go: ", (len(id_list) - z), " branch: ", id_list[0]
+            print datetime.datetime.now()
+
+    conn.commit()
+    conn.close()
+                
+        
+
 ###Main Method###
 def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_freq_min, cores):
     print "Local Spatial Statistics Parameters"
@@ -240,9 +300,63 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
     cur = conn.cursor()
 
+    if statistic.lower() == "zavg":
+
+        print "Beginning Zavg statistic calculation mode"
+
+        out_tbl_zavg = out_tbl + "_zavg"
+
+        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl_zavg, ))
+
+        cur.execute("DELETE FROM %s ;" % out_tbl_zavg)
+
+        word_means = {}
+
+        word_stds = {}
+
+        word_lists = {}
+
+        print "Calculating word means and std deviations"
+
+        for doc in docDict:
+            for word in docDict[doc]:
+                word_lists.setdefault(word, list()).append(docDict[doc][word])
+
+        
+        for word in word_lists:
+            alist = word_lists[word]
+            numzeros = len(docDict)-len(word_lists[word])
+            zerolist = [0.0 for x in range(0, numzeros)]
+            alist.extend(zerolist)
+            word_stds[word] = numpy.std(alist)
+            word_means[word] = numpy.mean(alist)
+
+        print "Done calculating means and std deviations"
+
+        SQL_fetchgrid = "SELECT DISTINCT p1.gid from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
+        cur.execute(SQL_fetchgrid, (kern_dist, ))
+        grid = [x[0] for x in cur.fetchall()]
+
+        import multiprocessing
+
+        pool = multiprocessing.Pool(cores)
+
+        id_lists = chunkIt(grid, cores)
+
+        print "Closing Existing DB Connection..."
+        conn.commit()
+        conn.close()
+
+        print "Starting Actual Calcs"
+        print "Spawning ", len(id_lists), " processes"
+
+        pool.map(ZavgCalc, [[,gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_means, word_stds, F_All, out_tbl_zavg] for i in id_lists])
+
+        print "Done Executing all processes"
+
     if statistic.lower() == "gi":
 
-        print "Begining Gi* statistic calculation mode"
+        print "Beginning Gi* statistic calculation mode"
 
         out_tbl_gi = out_tbl + "_gi"
 
