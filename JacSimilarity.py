@@ -99,13 +99,14 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     m = 0
     SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
     keylist = set([x for x in synlist.keys() if x in appearingwords])
+    print "keylist length: "len(keylist)
     randJacScores = []
     while x < randits and m < len(keylist)*2:
         r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r2]
-        print r2
+        #print r2
         print s1, s2
         m += 1
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
@@ -119,7 +120,6 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
             if x % 10 == 0:
                 print "Random Iteration ", x
                 print datetime.datetime.now()
-
     if m >= len(keylist):
         print "Random searches exceeded 2 x keylist"
     print "Done Creating Random Word Distributions"
