@@ -102,13 +102,13 @@ def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     print len(appearingwords)
     print "keylist length: ", len(keylist)
     randJacScores = []
-    while x < randits and m < len(keylist)*2:
+    while (x < randits and m < len(keylist)*2):
         r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r2]
         #print r2
-        #print s1, s2
+        print s1, s2
         m += 1
         if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
             #print s1, s2
