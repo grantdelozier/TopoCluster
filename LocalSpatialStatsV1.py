@@ -332,6 +332,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             for word in docDict[doc]:
                 word_lists.setdefault(word, list()).append(docDict[doc][word])
 
+        print "Done building word lists"
         
         for word in word_lists:
             alist = word_lists[word]
@@ -341,6 +342,9 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             word_stds[word] = numpy.std(alist)
             word_means[word] = sum(alist)/float(len(docDict))
 
+        del word_lists
+        del zerolist
+        del alist
         print "Done calculating means and std deviations"
 
         SQL_fetchgrid = "SELECT DISTINCT p1.gid from %s as p1, %s as p2 WHERE st_dwithin(p1.geog, p2.geog, %s);" % (gtbl, dtbl, '%s')
