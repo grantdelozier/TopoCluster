@@ -71,7 +71,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
 
     std_dev = numpy.std(RandWordDist)
     pop_mean = numpy.mean(RandWordDist)
-    sig_hat = std_dev / math.sqrt(randits)
+    sighat = std_dev / math.sqrt(randits)
 
     openw = io.open(outf, 'w', encoding='utf-8')
 
