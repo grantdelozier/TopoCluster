@@ -352,7 +352,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Starting Actual Calcs"
         print "Spawning ", len(id_lists), " processes"
 
-        pool.map(ZavgCalc, [[,gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_means, word_stds, F_All, out_tbl_zavg] for i in id_lists])
+        pool.map(ZavgCalc, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_means, word_stds, F_All, out_tbl_zavg] for i in id_lists])
 
         print "Done Executing all processes"
 
