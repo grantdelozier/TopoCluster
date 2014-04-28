@@ -167,16 +167,18 @@ def ZavgCalc(x):
             #print "Num Neighbors", len(rows)
 
             newsumDict = dict([(x, 0.0) for x in F_All])
+            weightsum = 0
 
             for p in rows:
                 uid = p[0]
                 weight = float(p[1])
+                weightsum += weight
                 for wd in docDict[uid]:
                     newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * ((docDict[uid][wd]-word_means[wd])/word_stds[wd]))
 
             for w in newsumDict:
                 if len(w) <= 30:
-                    allData.append([i, w, newsumDict[wd]/float(len(rows))])
+                    allData.append([i, w, newsumDict[wd]/float(weightsum)])
             
             args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
                 
