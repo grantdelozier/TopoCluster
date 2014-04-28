@@ -7,6 +7,7 @@ import io
 import math
 import numpy
 import scipy.stats as st
+import random
 
 #Main method
 def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
@@ -41,17 +42,20 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
 
     m = 0
 
+    cur.execute("SELECT DISTINCT word from %s;" % stat_tbl)
+    appearingwords = [w for w in cur.fetchall()]
+
     for s in syn_link:
         #print s
-        cur.execute(SQL_Fetch, (s, ))
-        s_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
-        if len(s_dict) > 0:
+        if s in appearingwords:
+            cur.execute(SQL_Fetch, (s, ))
+            s_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             for s2 in syn_link[s]:
                 if s2+'|'+s not in sim_dict:
-                    print "Comparing - ", s, " vs ", s2
-                    cur.execute(SQL_Fetch, (s2, ))
-                    s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
-                    if len(s2_dict) > 0:
+                    if s2 in appearingwords:
+                        print "Comparing - ", s, " vs ", s2
+                        cur.execute(SQL_Fetch, (s2, ))
+                        s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
                         simscore = WeightedJac(s_dict, s2_dict)
                         sim_dict[s+'|'+s2] = simscore
         m += 1
