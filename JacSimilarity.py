@@ -44,12 +44,14 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
         #print s
         cur.execute(SQL_Fetch, (s, ))
         s_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
-        for s2 in syn_link[s]:
-            #print "Comparing - ", s, " vs ", s2
-            cur.execute(SQL_Fetch, (s2, ))
-            s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
-            simscore = WeightedJac(s_dict, s2_dict)
-            sim_dict[s+'|'+s2] = simscore
+        if len(s_dict) > 0:
+            for s2 in syn_link[s]:
+                #print "Comparing - ", s, " vs ", s2
+                cur.execute(SQL_Fetch, (s2, ))
+                s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
+                if len(s2_dict) > 0:
+                    simscore = WeightedJac(s_dict, s2_dict)
+                    sim_dict[s+'|'+s2] = simscore
 
     print "Done calculating synset similarity scores"
 
