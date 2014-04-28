@@ -91,24 +91,28 @@ def WeightedJac(d1, d2):
     maxsum = sum([max(v, d2[k]) for k,v in d1.items()])
     return (minsum/maxsum)
     
-def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl):
+def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingswords):
     print "Creating Random Word Distributions"
     x = 0
+    m = 0
     SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
     keylist = synlist.keys()
     randJacScores = []
-    while x < randits:
+    while x < randits or m > len(keylist):
         r1 = random.randint(0, len(keylist)-1)
         s1 = keylist[r1]
         r2 = random.randint(0, len(keylist)-1)
         s2 = keylist[r1]
-        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1]:
+        m += 1
+        if s1 != s2 and s1 not in synlist[s2] and s2 not in synlist[s1] and s1 in appearingwords and s2 in appearingswords:
             cur.execute(SQL_Fetch, (s1, ))
             s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             cur.execute(SQL_Fetch, (s2, ))
             s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
             randJacScores.append(WeightedJac(s1_dict, s2_dict))            
             x += 1
+            if x % 50 == 0:
+                print "Random Iteration ", x
     print "Done Creating Random Word Distributions"
     return randJacScores
 
