@@ -185,7 +185,7 @@ if len(sys.argv) >= 3:
         #How many random word comparisons to make in building similarity score distribution
         #Used to derive P-value for given pair
         try:
-            randits = args[args.index('-randits')+1]
+            randits = int(args[args.index('-randits')+1])
         except:
             print "Did not provide -randits argument, defaulting to 100"
             randits = 100

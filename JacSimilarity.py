@@ -16,7 +16,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
     print "Number of iterations used to produce 'random word distribution'", randits
     print "out file that similarity scores will be written to: ", outf
 
-    syn_link = []
+    syn_link = {}
 
     with io.open(synfile, 'r', encoding='utf-8') as w:
         for line in w:
