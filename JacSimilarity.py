@@ -10,7 +10,7 @@ import scipy.stats as st
 import random
 
 #Main method
-def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
+def calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func):
     print "Table Containing Statistics: ", stat_tbl
     print "File path containing synsets: ", synfile
     print "which percentil to select: ", pct
@@ -65,25 +65,39 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf):
 
     print "Done calculating synset similarity scores"
 
+    FuncWordDist = FuncWord_SimDistribution(cur, randits, stat_tbl_func)
+
     RandWordDist = RandomWord_SimDistribution(syn_link, cur, randits, stat_tbl, appearingwords)
 
     print len(RandWordDist)
 
-    std_dev = numpy.std(RandWordDist)
-    pop_mean = numpy.mean(RandWordDist)
-    sighat = std_dev / math.sqrt(randits)
+    randfunc_std_dev = numpy.std(FuncWordDist)
+    randfunc_pop_mean = numpy.mean(FuncWordDist)
+    randfunc_sighat = randfunc_std_dev / math.sqrt(randits)
+    
+
+    randword_std_dev = numpy.std(RandWordDist)
+    randword_pop_mean = numpy.mean(RandWordDist)
+    randword_sighat = randword_std_dev / math.sqrt(randits)
 
     openw = io.open(outf, 'w', encoding='utf-8')
 
     print "Writing to outfile"
 
     for p in sim_dict:
-        pval1 = st.norm.sf((sim_dict[p] - pop_mean) / std_dev)
-        pval2 = st.norm.sf((sim_dict[p] - pop_mean) / sighat)
-        pval3 = st.norm.sf((pop_mean - sim_dict[p]) / std_dev)
-        pval4 = st.norm.sf((pop_mean - sim_dict[p]) / sighat)
+        pval1 = st.norm.sf((sim_dict[p] - randword_pop_mean) / randword_std_dev)
+        pval2 = st.norm.sf((sim_dict[p] - randword_pop_mean) / randword_sighat)
+        pval3 = st.norm.sf((randword_pop_mean - sim_dict[p]) / randword_std_dev)
+        pval4 = st.norm.sf((randword_pop_mean - sim_dict[p]) / randword_sighat)
         #print p, sim_dict[p], pval1, pval2, pval3, pval4
-        openw.write(p +'\t' + str(sim_dict[p]) + '\t' + str(pop_mean) + '\t' + str(pval1) + '\t'+ str(pval2) + '\t' + str(pval3) + '\t' + str(pval4) + '\r\n')
+
+        pval5 = st.norm.sf((sim_dict[p] - randfunc_pop_mean) / randfunc_std_dev)
+        pval6 = st.norm.sf((sim_dict[p] - randfunc_pop_mean) / randfunc_sighat)
+        pval7 = st.norm.sf((randfunc_pop_mean - sim_dict[p]) / randfunc_std_dev)
+        pval8 = st.norm.sf((randfunc_pop_mean - sim_dict[p]) / randfunc_sighat)
+        
+        #
+        openw.write(p +'\t' + str(sim_dict[p]) + '\t' + str(randword_pop_mean) +'\t' + str(randfunc_pop_mean) + '\t' + str(pval1)+'|'+str(pval5) + '\t'+ str(pval2)+'|'+str(pval6) + '\t' + str(pval3)+'|'+str(pval7) + '\t' + str(pval4)+'|'+str(pval8) + '\r\n')
 
     openw.close()
     conn.close()
@@ -92,6 +106,44 @@ def WeightedJac(d1, d2):
     minsum = sum([min(v, d2[k]) for k,v in d1.items()])
     maxsum = sum([max(v, d2[k]) for k,v in d1.items()])
     return (minsum/maxsum)
+
+def FuncWord_SimDistribution(cur, randits, stat_tbl_func):
+    print "Creating Function Word Distributions"
+
+    y = 0
+    m = 0
+    cur.execute("Select Distinct p1.word from %s as p1;" % stat_tbl)
+    keylist = [x[0] for x in cur.fetchall()]
+    randJacScores = []
+    already_compared = []
+    
+    SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
+
+    while y < randits:
+        r1 = random.randint(0, len(keylist)-1)
+        s1 = keylist[r1]
+        r2 = random.randint(0, len(keylist)-1)
+        s2 = keylist[r2]
+        if m > 50000:
+            print "Possible ininfite loop? Breaking while loop"
+            break
+        if (s1!=s2) and (s1+'_'+s2 not in already_compared) and (s2+'_'+s1 not in already_compared):
+            cur.execute(SQL_Fetch, (s1, ))
+            s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
+            cur.execute(SQL_Fetch, (s2, ))
+            s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
+            randJacScores.append(WeightedJac(s1_dict, s2_dict))            
+            y += 1
+            already_compared.append(s1+'_'+s2)
+            if y % 10 == 0:
+                print "Random Iteration ", y
+                print datetime.datetime.now()
+            
+        m +=1
+    print "Done Generating Rand Function Word Similarities"
+    return randJacScores
+
+    
     
 def RandomWord_SimDistribution(synlist, cur, randits, stat_tbl, appearingwords):
     print "Creating Random Word Distributions"

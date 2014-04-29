@@ -161,6 +161,13 @@ if len(sys.argv) >= 3:
             print "You did not provide a name for a statistics table to use"
             sys.exit("Error")
 
+        #Statistics Table (Zavg/Gi*)
+        try:
+            stat_tbl_func = args[args.index("-stat_tbl_func")+1]
+        except:
+            print "You did not provide a name for a statistics table to use"
+            sys.exit("Error")
+
         #Synset file
         try:
             synfile = args[args.index("-synfile")+1]
@@ -196,7 +203,7 @@ if len(sys.argv) >= 3:
         except:
             pct = "Not Implemented"
 
-        JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf)
+        JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
