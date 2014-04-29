@@ -178,7 +178,7 @@ def ZavgCalc(x):
 
             for w in newsumDict:
                 if len(w) <= 30:
-                    allData.append([i, w, newsumDict[wd]/float(weightsum)])
+                    allData.append([i, w, newsumDict[w]/float(weightsum)])
             
             args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
                 
@@ -335,6 +335,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Done building word lists"
         
         for word in word_lists:
+            alist = []
             alist = word_lists[word]
             numzeros = len(docDict)-len(word_lists[word])
             zerolist = [0.0 for x in range(0, numzeros)]
