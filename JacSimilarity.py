@@ -112,12 +112,14 @@ def FuncWord_SimDistribution(cur, randits, stat_tbl_func):
 
     y = 0
     m = 0
-    cur.execute("Select Distinct p1.word from %s as p1;" % stat_tbl)
+    cur.execute("Select Distinct p1.word from %s as p1;" % stat_tbl_func)
     keylist = [x[0] for x in cur.fetchall()]
+
+    print "Number of function words: ", len(keylist)
     randJacScores = []
     already_compared = []
     
-    SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl, '%s')
+    SQL_Fetch = "Select p1.gid, p1.stat from %s as p1 where p1.word = %s" % (stat_tbl_func, '%s')
 
     while y < randits:
         r1 = random.randint(0, len(keylist)-1)
