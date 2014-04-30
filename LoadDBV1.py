@@ -62,6 +62,7 @@ def Load(tf, tbl_name, conn_info, traintype):
                     page_name = row[1]
                     latit = row[2].split(',')[0]
                     longit = row[2].split(',')[1]
+                    F_Freq = row[9]
                 newDocument = Document(userID, latit, longit, filename)
                 docList.append(newDocument)
             except:
