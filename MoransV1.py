@@ -963,7 +963,6 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
                 print "@@@@@error reading user@@@@@@"
                 print row
                 print z
-                break
             z += 1
             if z % 5000 == 0:
                 print z
