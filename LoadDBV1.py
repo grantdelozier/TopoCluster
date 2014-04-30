@@ -1,3 +1,6 @@
+import sys
+
+#sys.path.append('/home/02608/grantdel/pythonlib/lib/python2.7/site-packages')
 import psycopg2
 import datetime
 import io
@@ -87,6 +90,9 @@ def Load(tf, tbl_name, conn_info, traintype):
         SQL1 = "INSERT INTO %s VALUES (%s, %s, %s, ST_GeographyFromText('SRID=4326;POINT(%s %s)'), %s);" % (tbl_name, '%s', '%s', '%s', '%s', '%s', '%s')
         data = (p.userID, float(p.userLat), float(p.userLong), float(p.userLong), float(p.userLat), p.fileFrom)
         cur.execute(SQL1, data)
+
+
+    cur.execute("CREATE INDEX %s_gist ON %s USING gist(geog);" % (tbl_name, tbl_name))
 
     conn.commit()
     conn.close()
