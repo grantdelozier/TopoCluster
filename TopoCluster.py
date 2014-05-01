@@ -113,8 +113,18 @@ if len(sys.argv) >= 3:
             print "Did not provide a valid kerntype option, defaulting to uniform"
             kerntype = "uniform"
 
+        #Should probabilities of zero be written to tbl? (yes for similarity scores, no for Top Resolver)
+        try:
+            include_zero = args[args.index('-include_zero')+1]
+            if include_zero.lower() == "false":
+                include_zero = False
+            else: include_zero = True
+        except:
+            print "Did not provide include zero argument, defaulting to True"
+            include_zero = True
 
-        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores)
+
+        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores, include_zero)
         
 
     ##########################Load a database with | Doc ID | Geometry | table#####################

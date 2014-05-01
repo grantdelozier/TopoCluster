@@ -74,6 +74,7 @@ def GiCalcs(x):
     word_totals = x[7]
     F_All = x[8]
     out_tbl = x[9]
+    include_zero = x[10]
 
     print "Starting Calculation Branch ", id_list[0]
 
@@ -99,7 +100,9 @@ def GiCalcs(x):
             #print "###########", i, "###############"
             #print "Num Neighbors", len(rows)
 
-            newsumDict = dict([(x, 0.0) for x in F_All])
+            if include_zero = True:
+                newsumDict = dict([(x, 0.0) for x in F_All])
+            else: newsumDict = {}
 
             for p in rows:
                 uid = p[0]
@@ -108,7 +111,7 @@ def GiCalcs(x):
                     newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * docDict[uid][wd])
 
             for w in newsumDict:
-                if len(w) <= 30:
+                if len(w) <= 40:
                     gi_stat = newsumDict[w]/word_totals[w]
                     if newsumDict[w] > word_totals[w]:
                         print "Broken Entry ", w
@@ -143,6 +146,7 @@ def ZavgCalc(x):
     word_stds = x[8]
     F_All = x[9]
     out_tbl = x[10]
+    include_zero = x[11]
 
     print "Starting Calculation Branch ", id_list[0]
 
@@ -166,7 +170,9 @@ def ZavgCalc(x):
             #print "###########", i, "###############"
             #print "Num Neighbors", len(rows)
 
-            newsumDict = dict([(x, 0.0) for x in F_All])
+            if include_zero = True:
+                newsumDict = dict([(x, 0.0) for x in F_All])
+            else: newsumDict = {}
             weightsum = 0
 
             for p in rows:
@@ -177,7 +183,7 @@ def ZavgCalc(x):
                     newsumDict[wd] = newsumDict.get(wd, 0.0) + (weight * ((docDict[uid][wd]-word_means[wd])/word_stds[wd]))
 
             for w in newsumDict:
-                if len(w) <= 30:
+                if len(w) <= 40:
                     allData.append([i, w, newsumDict[w]/float(weightsum)])
             
             args_str = ",".join(cur.mogrify("(%s,%s,%s)", x) for x in allData)
@@ -196,7 +202,7 @@ def ZavgCalc(x):
         
 
 ###Main Method###
-def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_freq_min, cores):
+def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_freq_min, cores, include_zero):
     print "Local Spatial Statistics Parameters"
     print "Train file: ", f
     print "Document Table Name: ", dtbl
@@ -212,6 +218,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
     print "Calculating Statistics for which words: ", listuse
     print "Location of whitelist_file: ", whitelist_file
+    print "Including zero probs to DB write?: ", include_zero
 
     print "Number of cores you want to devote to multiprocessing (recommended 1/2 the number that exist on the system):", cores
     
@@ -316,7 +323,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
         out_tbl_zavg = out_tbl + "_zavg"
 
-        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl_zavg, ))
+        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(40), stat float);" % (out_tbl_zavg, ))
 
         cur.execute("DELETE FROM %s ;" % out_tbl_zavg)
 
@@ -365,7 +372,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Starting Actual Calcs"
         print "Spawning ", len(id_lists), " processes"
 
-        pool.map(ZavgCalc, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_means, word_stds, F_All, out_tbl_zavg] for i in id_lists])
+        pool.map(ZavgCalc, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_means, word_stds, F_All, out_tbl_zavg, include_zero] for i in id_lists])
 
         print "Done Executing all processes"
 
@@ -408,7 +415,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Starting Actual Calcs"
         print "Spawning ", len(id_lists), " processes"
 
-        pool.map(GiCalcs, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi] for i in id_lists])
+        pool.map(GiCalcs, [[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi, include_zero] for i in id_lists])
 
         #for i in id_lists:
         #    t2 = threading.Thread(target=GiCalcs, args=[gtbl, dtbl, i, kern_dist, kerntype, conn_info, docDict, word_totals, F_All, out_tbl_gi])
