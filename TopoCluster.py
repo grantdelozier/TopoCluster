@@ -215,6 +215,29 @@ if len(sys.argv) >= 3:
 
         JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
+    ###################Test Toponym Resolver on TRConll#####################
+    if mode_arg.lower() == "topo_test":
+        import TestResolverV1 as tstr
+        print "Starting test of topo resolver on TRConll"
+
+        #Statistics Table (Zavg/Gi*)
+        try:
+            stat_tbl = args[args.index("-stat_tbl")+1]
+        except:
+            print "You did not provide a name for a statistics table to use"
+            sys.exit("Error")
+
+        #Train file, dev file, or tst file
+        if '-tf' in args:
+            f = args[args.index("-tf")+1]
+        elif '-df' in args:
+            f = args[args.index("-df")+1]
+        elif '-tstf' in args:
+            f = args[args.index("-tstf")+1]
+        
+
+        tstr.calc(stat_tbl ,f)        
+
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans

@@ -100,7 +100,7 @@ def GiCalcs(x):
             #print "###########", i, "###############"
             #print "Num Neighbors", len(rows)
 
-            if include_zero = True:
+            if include_zero == True:
                 newsumDict = dict([(x, 0.0) for x in F_All])
             else: newsumDict = {}
 
@@ -170,7 +170,7 @@ def ZavgCalc(x):
             #print "###########", i, "###############"
             #print "Num Neighbors", len(rows)
 
-            if include_zero = True:
+            if include_zero == True:
                 newsumDict = dict([(x, 0.0) for x in F_All])
             else: newsumDict = {}
             weightsum = 0
@@ -382,7 +382,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
         out_tbl_gi = out_tbl + "_gi"
 
-        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(30), stat float);" % (out_tbl_gi, ))
+        cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20), word varchar(40), stat float);" % (out_tbl_gi, ))
 
         cur.execute("DELETE FROM %s ;" % out_tbl_gi)
 
