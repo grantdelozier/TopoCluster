@@ -234,9 +234,16 @@ if len(sys.argv) >= 3:
             f = args[args.index("-df")+1]
         elif '-tstf' in args:
             f = args[args.index("-tstf")+1]
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
         
 
-        tstr.calc(stat_tbl ,f)        
+        tstr.calc(stat_tbl , f, conn_info)        
 
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
