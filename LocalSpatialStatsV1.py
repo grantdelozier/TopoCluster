@@ -340,15 +340,23 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                 word_lists.setdefault(word, list()).append(docDict[doc][word])
 
         print "Done building word lists"
+
+        g = 0
+        numdocs = len(docDict)
         
         for word in word_lists:
             alist = []
+            g += 1
             alist = word_lists[word]
-            numzeros = len(docDict)-len(word_lists[word])
-            zerolist = [0.0 for x in range(0, numzeros)]
-            alist.extend(zerolist)
-            word_stds[word] = numpy.std(alist)
-            word_means[word] = sum(alist)/float(len(docDict))
+            word_means[word] = sum(alist)/float(numdocs)
+            numzeros = numdocs-len(word_lists[word])
+            #zerolist = [0.0 for x in range(0, numzeros)]
+            #alist.extend(zerolist)
+            asum1 = sum([math.power(m - word_means[m], 2) for m in alist])
+            asum2 = math.power(-word_means[word], 2) * float(numzeros)
+            word_stds[word] = (asum1 + asum2) / float(numdocs)
+            if g % 10000 == 0:
+                print "Left to go: ", len(word_lists) - g
 
         del word_lists
         del zerolist
