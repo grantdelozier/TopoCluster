@@ -352,8 +352,8 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             numzeros = numdocs-len(word_lists[word])
             #zerolist = [0.0 for x in range(0, numzeros)]
             #alist.extend(zerolist)
-            asum1 = sum([math.power(m - word_means[m], 2) for m in alist])
-            asum2 = math.power(-word_means[word], 2) * float(numzeros)
+            asum1 = sum([math.pow(m - word_means[m], 2) for m in alist])
+            asum2 = math.pow(-word_means[word], 2) * float(numzeros)
             word_stds[word] = (asum1 + asum2) / float(numdocs)
             if g % 10000 == 0:
                 print "Left to go: ", len(word_lists) - g
