@@ -1,7 +1,12 @@
 import sys
 import os
 
+
+import psycopg2
 import xml.etree.ElementTree as ET
+
+from collections import Counter
+from operator import itemgetter
 
 def parse_xml(afile):
     xmldoc = ET.parse(file(afile))
@@ -39,7 +44,7 @@ def getContext(wordref, i, window):
 		if i - window >= j:
 			break
 		contextlist.append(wordref[j])
-	print len(contextlist)
+	#print len(contextlist)
 	j = i
 	while j < len(wordref):
 		j = j + 1
@@ -48,11 +53,19 @@ def getContext(wordref, i, window):
 		contextlist.append(wordref[j])
 	return contextlist
 
+def updateInPlace(a,b):
+    a.update(b)
+    return a
 
 def calc(stat_tbl, test_xml, conn_info):
     print "Local Statistics Table Name: ", stat_tbl
     print "Test XML directory/file path: ", test_xml
     print "DB conneciton info: ", conn_info
+
+    conn = psycopg2.connect(conn_info)
+    print "Connection Success"
+
+    cur = conn.cursor()
 
     window = 20
 
@@ -64,7 +77,18 @@ def calc(stat_tbl, test_xml, conn_info):
         for j in toporef:
         	print toporef[j][0], toporef[j][1]['lat'], toporef[j][1]['long']
         	contextlist = getContext(wordref, j, window)
-        	print len(contextlist)
+        	print contextlist
+        	totaldict = Counter()
+        	for word in contextlist:
+        		SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (stat_tbl, '%s')
+        		cur.execute(SQL, (word, ))
+        		adict =  dict([(int(k), float(v)) for k, v in cur.fetchall()])
+        		totaldict += Counter(adict)
+        	#print totaldict
+        	sorted_total = sorted(totaldict.items(), key=itemgetter(1), reverse=True)
+        	print sorted_total[:5]
+
+        	#print len(contextlist)
 
 
 
