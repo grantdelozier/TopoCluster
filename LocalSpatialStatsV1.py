@@ -355,11 +355,11 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
             asum1 = sum([math.pow(m - word_means[word], 2) for m in alist])
             asum2 = math.pow(-word_means[word], 2) * float(numzeros)
             word_stds[word] = (asum1 + asum2) / float(numdocs)
-            if g % 10000 == 0:
+            if g % 100000 == 0:
                 print "Left to go: ", len(word_lists) - g
 
         del word_lists
-        del zerolist
+        #del zerolist
         del alist
         print "Done calculating means and std deviations"
 
