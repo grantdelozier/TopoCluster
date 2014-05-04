@@ -3,6 +3,7 @@ import io
 import subprocess
 import os
 BASE_DIR = 'C:\\Users\\Lori\\Documents\\CS388\\SemesterProject\\TopCluster\\SourceCode\\' #Must modify based on location
+
 '''
 broken_files - Identifies files that were not parsed correctly stores IDs in output file, prints count of broken files
 @params - args - [input_file, output_file]
@@ -15,14 +16,17 @@ def broken_files(args):
     with io.open(args[0], 'r', encoding='utf-8') as large_file :
         for record in large_file:
             line = record.split(unicode('\t'))
-            if len(line[8]) < 4:
-#                 print record
-                broken.write(line[0]+unicode('\n'))
+            if record != unicode('\n') and len(line) == 9:
+                broken.write(record)
                 count += 1
-
-            total += 1
+            try:
+                val = int(line[0])
+            except:
+                broken.write(record)
+                count += 1
+            total+=1
     broken.close()
-    print str(count) + ' out of ' + str(total) +' broken files must redo them...'
+    print str(count) + ' out of ' + str(total) +' bad files'
 
 '''
 fix_current_file - creates a new output file by fixing the broken files 
@@ -47,8 +51,31 @@ def fix_current_file(args):
                 broken.write(record)
             total += 1
     broken.close()
-    print 'Successfully Fixed File'
-    
+    print 'Successfully Fixed ' + str(count) + ' files...'
+
+'''
+rm_duplicate - creates a new output file by removing any lines that are duplicated based
+on Article ID 
+@params - [input_file, output_file]
+'''
+def rm_duplicate(args):
+        dictionary = dict()
+        output = io.open(args[1], 'w', encoding='utf-8')
+        line_num = 0
+        count = 0
+        with io.open(args[0] , 'r', encoding='utf-8') as parse_file:
+            for line in parse_file:
+                token = line.split(unicode('\t'))
+                if token[0] in dictionary:
+                    print 'Duplicate ID: '+token[0] + ' Line Number: ' + str(line_num) + ' Original: ' + str(dictionary[token[0]])
+                    count += 1
+                else:    
+                    output.write(line)
+                    dictionary[token[0]] = line_num
+                
+        output.close()
+        print str(count) + ' duplicate lines'
+        
 def GetNer(output_file, file_name, original_data):
     output = io.open('C:\\Users\\Lori\\Documents\\CS388\\SemesterProject\\TopCluster\\dat_file\\'+file_name+'.dat', 'w', encoding="utf-8");
     p = subprocess.Popen('java -mx500m -cp '+
@@ -129,8 +156,14 @@ def merge(args):
     new_file.close()
     print 'Created new Wiki-File'
 if __name__ == '__main__':
+    #sys.argv = ['','-identify','-input',"C:\Users\Lori\Documents\CS388\SemesterProject\TopCluster\\wiki_training_file.txt",'-output', "check.txt"]
     try:
-        if sys.argv[1] == '-fix':
+        if sys.argv[1] == '-rm_duplicate':
+            if sys.argv[2] == '-input' and sys.argv[4] == '-output':
+                rm_duplicate([sys.argv[3], sys.argv[5]])
+            else:
+                print 'Bad method call: -fix -input file_name -output file_name'
+        elif sys.argv[1] == '-fix':
             if sys.argv[2] == '-input' and sys.argv[4] == '-output':
                 fix_current_file([sys.argv[3], sys.argv[5]])
             else:
@@ -154,11 +187,14 @@ if __name__ == '__main__':
             print '\t-fix -input input_file -output output_file'
             print '\t\tinput_file : name of input file'
             print '\t\toutput_file : name of output file'
-            print '-identify : identify the number of files not parsed correctly'
+            print '-identify : identify the number of files not parsed correctly and removes them'
             print '\t-identify -input file_name -output file_name'
             print '\t\tinput_file : name of input file'
             print '\t\toutput_file : name of output file'
-
+            print '-rm_duplicate : identifies duplicate lines and removes them'
+            print '\t-rm_duplicate -input file_name -output file_name'
+            print '\t\tinput_file : name of input file'
+            print '\t\toutput_file : name of output file'
         else:
             print 'Type in --help to see method calls'
     except:

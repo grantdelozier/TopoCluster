@@ -6,7 +6,7 @@ import datetime
 import io
 import math
 import numpy
-
+import SuperDocument as sp
 from collections import Counter
 
 import KernelFunctionsV1 as KF
@@ -14,7 +14,7 @@ import KernelFunctionsV1 as KF
 import operator
 
 import random
-
+import SuperDocument as sp
 class Document:
 
     userID = ""
@@ -26,6 +26,7 @@ class Document:
     Feature_Prob = {}
     outside_word_prob = 0
     fileFrom = ""
+    stats_dictionary = sp.SuperDocument()
 
     def __init__(self, ID, latit, longit, F_Freq, file_from, listuse, whitelist, aggLM=False):
         self.userID = ID
@@ -34,10 +35,16 @@ class Document:
         #self.Feature_Freq = F_Freq
         self.fileFrom = file_from
         tw = 0
+        N_1 = 0
         if aggLM == False:
             for f in F_Freq:
-                tw += int(F_Freq[f])
+                val = int(F_Freq[f])
+                if val == 1:
+                    N_1 += 1
+                tw += val
         self.total_words = tw
+        Document.stats_dictionary.add(F_Freq)
+        self.OOV_prob = float(N_1)/float(tw)
         if aggLM==False:
             self.CalcUnigramProb(F_Freq, listuse, whitelist)
 
@@ -50,6 +57,13 @@ class Document:
             else:
                 F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
         self.Feature_Prob = F_Prob
+        
+    def CalcSmoothUnigramProb(self, word):
+        global_probability = float(Document.stats_dictionary.global_dictionary[word])/Document.stats_dictionary.global_total
+        if word in self.Feature_Prob:
+            return self.Feature_Prob[word]*(1-self.OOV_prob) + self.OOV_prob*global_probability
+        else:
+            return self.OOV_prob*global_probability
 
 def chunkIt(seq, num):
   avg = len(seq) / float(num)
@@ -432,13 +446,3 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Done Executing all processes"
 
     print "Finished Calculating... check table: ", out_tbl
-
-
-
-
-
-    
-
-    
-
-    

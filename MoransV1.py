@@ -10,13 +10,13 @@ import numpy
 from collections import Counter
 
 import KernelFunctionsV1 as KF
-
+import SuperDocument as sp
 import operator
 
 import random
 
 class Document:
-
+    
     userID = ""
     userLat = ""
     userLong = ""
@@ -26,25 +26,39 @@ class Document:
     #Feature_Prob = {}
     outside_word_prob = 0
     fileFrom = ""
-
+    stats_dictionary = sp.SuperDocument()
     def __init__(self, ID, latit, longit, F_Freq, file_from, aggLM=False):
         self.userID = ID
         self.userLat = latit
         self.userLong = longit
         self.Feature_Freq = F_Freq
         self.fileFrom = file_from
+        
         tw = 0
+        N_1 = 0
         if aggLM == False:
             for f in F_Freq:
-                tw += int(F_Freq[f])
+                val = int(F_Freq[f])
+                if val == 1:
+                    N_1 += 1
+                tw += val
         self.total_words = tw
-        #self.CalcUnigramProb(self, F_Freq)
+        Document.stats_dictionary.add(F_Freq)
+        self.OOV_prob = float(N_1)/float(tw)
+        self.CalcUnigramProb(F_Freq)
 
-    #def CalcUnigramProb(self, F_Freq):
-    #    F_Prob = {}
-    #    for word in F_Freq:
-    #        F_Prob[word] = (float(F_Freq[word])/float(total_words))
-    #    self.Feature_Prob = F_Prob
+    def CalcUnigramProb(self, F_Freq):
+        F_Prob = {}
+        for word in F_Freq:
+            F_Prob[word] = (float(F_Freq[word])/float(self.total_words))
+        self.Feature_Prob = F_Prob
+    
+    def CalcSmoothUnigramProb(self, word):
+        global_probability = float(Document.stats_dictionary.global_dictionary[word])/Document.stats_dictionary.global_total
+        if word in self.Feature_Prob:
+            return self.Feature_Prob[word]*(1-self.OOV_prob) + self.OOV_prob*global_probability
+        else:
+            return self.OOV_prob*global_probability
 
 def updateInPlace(a,b):
     a.update(b)
@@ -1268,6 +1282,3 @@ def calc(f, dtbl, gtbl, conn_info, outf, agg_dist, kern_dist, traintype, writeAg
 
 
     conn.close()
-    
-    
-    
