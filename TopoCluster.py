@@ -222,7 +222,7 @@ if len(sys.argv) >= 3:
 
         JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
-    ###################Test Toponym Resolver on TRConll#####################
+   ###################Test Toponym Resolver on TRConll#####################
     if mode_arg.lower() == "topo_test":
         import TestResolverV1 as tstr
         print "Starting test of topo resolver on TRConll"
@@ -248,10 +248,58 @@ if len(sys.argv) >= 3:
         except:
             print "Problem parsing the connection information provided"
             sys.exit("Error")
+
+        #Pointgrid table name
+        try:
+            gtbl = args[args.index('-gtbl')+1]
+        except:
+            print "You did not provide a grid table argument"
+            sys.exit("Error")
+
+        #context window size
+        try:
+            window = int(args[args.index('-window')+1])
+        except:
+            print "You did not provide a window argument, defaulting to 15"
+            window = 15
+
+        #percentile of selection
+        try:
+            percentile = float(args[args.index('-percentile')+1])
+        except:
+            print "You did not provide a window argument, defaulting to .5"
+            percentile = .5
+
+        #percentile of selection
+        try:
+            place_name_weight = float(args[args.index('-place_name_weight')+1])
+        except:
+            print "You did not provide a window argument, defaulting to 10"
+            place_name_weight = 10.0
+
+        #Country Table Name
+        try:
+            country_tbl = args[args.index('-country_tbl')+1]
+        except:
+            print "You did not provide a country table argument"
+            sys.exit("Error")
+
+        #Region Table Name
+        try:
+            region_tbl = args[args.index('-region_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
+
+        #State Table Name
+        try:
+            state_tbl = args[args.index('-state_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
         
 
-        tstr.calc(stat_tbl , f, conn_info)        
-
+        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl)  
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans
