@@ -86,7 +86,7 @@ def GiCalcs(x):
 
     cur = conn.cursor()
 
-    zero_dict = dict([(x, 0.0) for x in F_All])
+    #zero_dict = dict([(x, 0.0) for x in F_All])
 
     for i in id_list:
         z += 1
@@ -285,7 +285,7 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
                     latit = row[2].split(',')[0]
                     longit = row[2].split(',')[1]
                     if UseAggLMs == False:
-                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
+                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[-1].split(" "))
                         #F_All |= set(F_Freq.keys())
                         newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
                         if listuse == 'any':
