@@ -34,6 +34,13 @@ if len(sys.argv) >= 3:
             print "You did not provide a name for a document table to output"
             sys.exit("Error")
 
+        #PROCESS ID (short term solution to multiprocess problems)
+        try:
+            procid = args[args.index("-procid")+1]
+        except:
+            print "You did not provide process id"
+            sys.exit("Error")
+
         #Pointgrid table name
         try:
             gtbl = args[args.index('-gtbl')+1]
@@ -124,7 +131,7 @@ if len(sys.argv) >= 3:
             include_zero = True
 
 
-        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores, include_zero)
+        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores, include_zero, procid)
         
 
     ##########################Load a database with | Doc ID | Geometry | table#####################
