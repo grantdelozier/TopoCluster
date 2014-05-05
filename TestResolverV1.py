@@ -60,7 +60,7 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
-def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_weight):
+def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl):
 	print "Local Statistics Table Name: ", stat_tbl
 	print "Test XML directory/file path: ", test_xml
 	print "DB conneciton info: ", conn_info
@@ -69,11 +69,15 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 	print "Percentile: ", percentile
 	print "Place name weight: ", place_name_weight
 
+	print "Country table name: ", country_tbl
+	print "Region table name: ", region_tbl
+	print "State table name: ", state_tbl
+
 	conn = psycopg2.connect(conn_info)
 	print "Connection Success"
 
 	stopwords = set(['.',',','(',')','-','=',";",':',"'",'"','$','the','a','an','that','this',
-					'to', 'be', 'have', 'is', 'are', 'was', 'am', "'s",
+					'to', 'be', 'have', 'has', 'is', 'are', 'was', 'am', "'s",
 					'and', 'or','but',
 					'by', 'of', 'from','in','after','on','for', 'TO',
 					'I', 'me', 'he', 'him', 'she', 'her', 'we', 'us', 'you', 'they', 'them', 'their', 'it'])
@@ -105,7 +109,7 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
 			wordref, toporef = parse_xml(test_xml + '/' + xml)
-			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list)
+			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl)
 			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
 		point_dist_list.sort()
 		poly_dist_list.sort()
@@ -171,7 +175,7 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 		conn.close()
 
 
-def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list):
+def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl):
 	for j in toporef:
 		print "=======Vector Sum=============="
 		total_topo += 1
@@ -188,15 +192,17 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 			#print "Inside title case changer"
 			#print topobase
 		#Change acronyms with periods into regular acronyms
-		if "." in topobase and ". " not in topobase:
+		if "." in topobase and ". " not in topobase.strip():
 			combinedtokens = ""
 			for token in topobase.split("."):
 				combinedtokens = combinedtokens + token
 				topotokens.append(token)
 				contextlist.append(token)
+			#topotokens.append(topobase.replace('.', ''))
 			topotokens.append(combinedtokens)
 			contextlist.append(combinedtokens)
 		else: topotokens.append(topobase)
+		gazet_topos = topotokens
 		if " " in topobase:
 			for token in topobase.split(" "):
 				topotokens.append(token)
@@ -240,16 +246,36 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 			y += 1
 			#print rank_dict[i[0]]
 			if y == 1:
+				if topobase not in gazet_topos:
+					gazet_topos.append(topobase)
+				if toporef[j][0] not in gazet_topos:
+					gazet_topos.append(toporef[j][0])
+				gazet_entry = GetGazets(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl)
+				poly_results = []
+				if len(gazet_entry) > 0:
+					if len(gazet_entry) == 1:
+						print "Executing Distance SQL for ", gazet_entry
+						gid = int(gazet_entry[0][1])
+						tbl = gazet_entry[0][0]
+						name = gazet_entry[0][2]
+						SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
+						#SQL_Poly_dist = "SELECT ST_Distance(p1.polygeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
+						#cur.execute(SQL_Point_dist, (toporef[j][0], xml, gid))
+						#point_results = cur.fetchall()
+						cur.execute(SQL_Poly_dist, (toporef[j][0], xml, gid))
+						poly_results = cur.fetchall()
+					else: print "@!@!@!@!@ More than one match found in gazet, need to resolve logic @!@!@!@!@"
 				SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
-				SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
+				#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
+				cur.execute(SQL_Point_Dist, (toporef[j][0], xml))
+				point_results = cur.fetchall()
+				#cur.execute(SQL_Poly_Dist, (toporef[j][0], xml))
+				#poly_results = cur.fetchall()
 				#print toporef[j][0]
 				#print xml
 				#print rank_dict[i[0]]
 				#print rank_dict[i[0]][2][1], rank_dict[i[0]][2][0]
-				cur.execute(SQL_Point_Dist, (toporef[j][0], xml))
-				point_results = cur.fetchall()
-				cur.execute(SQL_Poly_Dist, (toporef[j][0], xml))
-				poly_results = cur.fetchall()
+
 				#print results
 				pointdist = point_results[0][0]
 				pointdist = pointdist / float(1000)
@@ -272,6 +298,48 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 		#print "====================="
 		#print len(contextlist)
 	return point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list
+
+def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl):
+	names = tuple(x for x in placenames)
+	print names
+	gazet_entry = []
+	SQL1 = "SELECT p1.gid, p1.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.name IN %s or p1.fips_cntry IN %s or p1.gmi_cntry IN %s or p1.locshrtnam IN %s;" % (latlong[0], latlong[1], country_tbl, '%s', '%s', '%s', '%s')
+	SQL2 = "SELECT p2.gid, p2.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p2 WHERE p2.name in %s;" % (latlong[0], latlong[1], region_tbl, '%s')
+	SQL3 = "SELECT p3.gid, p3.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p3 WHERE p3.name in %s;" % (latlong[0], latlong[1], state_tbl, '%s')
+	SQL4 = "SELECT p4.gid, p4.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p4 WHERE p4.name in %s;" % (latlong[0], latlong[1], US_Prominent_tbl, '%s')
+	SQL5 = "SELECT p5.gid, p5.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p5 WHERE p5.name in %s;" % (latlong[0], latlong[1], Wrld_Prominent_tbl, '%s')
+	cur.execute(SQL1, (names, names, names, names))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([country_tbl, row[0], row[1], row[2]])
+		print "!!!Found Gazet Match!!!"
+		print gazet_entry[-1]
+	cur.execute(SQL2, (names, ))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([region_tbl, row[0], row[1], row[2]])
+		print "!!!Found Gazet Match!!!"
+		print gazet_entry[-1]
+	cur.execute(SQL3, (names, ))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([state_tbl, row[0], row[1], row[2]])
+		print "!!!Found Gazet Match!!!"
+		print gazet_entry[-1]
+	cur.execute(SQL4, (names, ))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([US_Prominent_tbl, row[0], row[1], row[2]])
+		print "!!!Found Gazet Match!!!"
+		print gazet_entry[-1]
+	cur.execute(SQL5, (names, ))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([Wrld_Prominent_tbl, row[0], row[1], row[2]])
+		print "!!!Found Gazet Match!!!"
+		print gazet_entry[-1]
+	return gazet_entry
+
 
 def MostOverlap(wordref, toporef, point_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml):
 	for j in toporef:
