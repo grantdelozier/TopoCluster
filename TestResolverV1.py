@@ -109,7 +109,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
 			wordref, toporef = parse_xml(test_xml + '/' + xml)
-			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl)
+			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, 
+				percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl)
 			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
 		point_dist_list.sort()
 		poly_dist_list.sort()
@@ -147,7 +148,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 		point_error_sum = 0.0
 		poly_error_sum = 0.0
 		error_sum2 = 0.0
-		point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list)
+		point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, 
+			stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, US_Prominent_tbl, Wrld_Prominent_tbl)
 		point_dist_list.sort()
 		poly_dist_list.sort()
 		#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, simplefile)
@@ -204,9 +206,11 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 		else: topotokens.append(topobase)
 		gazet_topos = topotokens
 		if " " in topobase:
-			for token in topobase.split(" "):
-				topotokens.append(token)
-				contextlist.append(token)
+			topotokens.append(topobase.replace(" ", '|'))
+			contextlist.append(topobase.replace(" ", '|'))
+			#for token in topobase.split(" "):
+			#	topotokens.append(token)
+			#	contextlist.append(token)
 		gold_lat = float(toporef[j][1]['lat'])
 		gold_long = float(toporef[j][1]['long'])
 		
@@ -250,9 +254,12 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 					gazet_topos.append(topobase)
 				if toporef[j][0] not in gazet_topos:
 					gazet_topos.append(toporef[j][0])
-				gazet_entry = GetGazets(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl)
+				gazet_entry = GetGazets(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl)
 				poly_results = []
+				tbl = "No Tbl Match"
+				#print "Gazet Entry: ", gazet_entry
 				if len(gazet_entry) > 0:
+					print "Gazet Entry: ", gazet_entry
 					if len(gazet_entry) == 1:
 						print "Executing Distance SQL for ", gazet_entry
 						gid = int(gazet_entry[0][1])
@@ -264,7 +271,9 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 						#point_results = cur.fetchall()
 						cur.execute(SQL_Poly_dist, (toporef[j][0], xml, gid))
 						poly_results = cur.fetchall()
-					else: print "@!@!@!@!@ More than one match found in gazet, need to resolve logic @!@!@!@!@"
+					else: 
+						print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
+						#print gazet_entry
 				SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
 				#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
 				cur.execute(SQL_Point_Dist, (toporef[j][0], xml))
@@ -273,7 +282,7 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 				#poly_results = cur.fetchall()
 				#print toporef[j][0]
 				#print xml
-				#print rank_dict[i[0]]
+				print rank_dict[i[0]]
 				#print rank_dict[i[0]][2][1], rank_dict[i[0]][2][0]
 
 				#print results
@@ -290,9 +299,9 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 				point_dist_list.append(pointdist)
 				poly_dist_list.append(polydist)
 				if pointdist > 1000.0:
-					point_bigerror.append([toporef[j][0], pointdist, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+					point_bigerror.append([toporef[j][0], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
 				if polydist > 1000.0:
-					poly_bigerror.append([toporef[j][0], polydist, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+					poly_bigerror.append([toporef[j][0], polydist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
 				point_error += pointdist
 				poly_error += polydist
 		#print "====================="
@@ -303,41 +312,45 @@ def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, US_P
 	names = tuple(x for x in placenames)
 	print names
 	gazet_entry = []
-	SQL1 = "SELECT p1.gid, p1.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.name IN %s or p1.fips_cntry IN %s or p1.gmi_cntry IN %s or p1.locshrtnam IN %s;" % (latlong[0], latlong[1], country_tbl, '%s', '%s', '%s', '%s')
-	SQL2 = "SELECT p2.gid, p2.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p2 WHERE p2.name in %s;" % (latlong[0], latlong[1], region_tbl, '%s')
-	SQL3 = "SELECT p3.gid, p3.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p3 WHERE p3.name in %s;" % (latlong[0], latlong[1], state_tbl, '%s')
-	SQL4 = "SELECT p4.gid, p4.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p4 WHERE p4.name in %s;" % (latlong[0], latlong[1], US_Prominent_tbl, '%s')
-	SQL5 = "SELECT p5.gid, p5.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p5 WHERE p5.name in %s;" % (latlong[0], latlong[1], Wrld_Prominent_tbl, '%s')
+	ranked_gazet = []
+	SQL1 = "SELECT p1.gid, p1.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.name IN %s or p1.fips_cntry IN %s or p1.gmi_cntry IN %s or p1.locshrtnam IN %s;" % (latlong[1], latlong[0], country_tbl, '%s', '%s', '%s', '%s')
+	SQL2 = "SELECT p2.gid, p2.name, ST_Distance(p2.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p2 WHERE p2.name in %s;" % (latlong[1], latlong[0], region_tbl, '%s')
+	SQL3 = "SELECT p3.gid, p3.name, ST_Distance(p3.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p3 WHERE p3.name in %s;" % (latlong[1], latlong[0], state_tbl, '%s')
+	SQL4 = "SELECT p4.gid, p4.name, ST_Distance(p4.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p4 WHERE p4.name in %s;" % (latlong[1], latlong[0], US_Prominent_tbl, '%s')
+	SQL5 = "SELECT p5.gid, p5.name, ST_Distance(p5.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p5 WHERE p5.name in %s;" % (latlong[1], latlong[0], Wrld_Prominent_tbl, '%s')
 	cur.execute(SQL1, (names, names, names, names))
 	returns = cur.fetchall()
 	for row in returns:
-		gazet_entry.append([country_tbl, row[0], row[1], row[2]])
-		print "!!!Found Gazet Match!!!"
-		print gazet_entry[-1]
+		gazet_entry.append([country_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
 	cur.execute(SQL2, (names, ))
 	returns = cur.fetchall()
 	for row in returns:
-		gazet_entry.append([region_tbl, row[0], row[1], row[2]])
-		print "!!!Found Gazet Match!!!"
-		print gazet_entry[-1]
+		gazet_entry.append([region_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
 	cur.execute(SQL3, (names, ))
 	returns = cur.fetchall()
 	for row in returns:
-		gazet_entry.append([state_tbl, row[0], row[1], row[2]])
-		print "!!!Found Gazet Match!!!"
-		print gazet_entry[-1]
+		gazet_entry.append([state_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
 	cur.execute(SQL4, (names, ))
 	returns = cur.fetchall()
 	for row in returns:
-		gazet_entry.append([US_Prominent_tbl, row[0], row[1], row[2]])
-		print "!!!Found Gazet Match!!!"
-		print gazet_entry[-1]
+		gazet_entry.append([US_Prominent_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
 	cur.execute(SQL5, (names, ))
 	returns = cur.fetchall()
 	for row in returns:
-		gazet_entry.append([Wrld_Prominent_tbl, row[0], row[1], row[2]])
-		print "!!!Found Gazet Match!!!"
-		print gazet_entry[-1]
+		gazet_entry.append([Wrld_Prominent_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
+	if len(gazet_entry) > 1:
+		ranked_gazet = sorted(gazet_entry, key=itemgetter(3), reverse=False)
+		return [ranked_gazet[0]]
 	return gazet_entry
 
 
