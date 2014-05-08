@@ -79,8 +79,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 	stopwords = set(['.',',','(',')','-','=',";",':',"'",'"','$','the','a','an','that','this',
 					'to', 'be', 'have', 'has', 'is', 'are', 'was', 'am', "'s",
 					'and', 'or','but',
-					'by', 'of', 'from','in','after','on','for', 'TO',
-					'I', 'me', 'he', 'him', 'she', 'her', 'we', 'us', 'you', 'they', 'them', 'their', 'it'])
+					'by', 'of', 'from','in','after','on','for', 'to', 'TO',
+					'I', 'me', 'he', 'him', 'she', 'her', 'we', 'us', 'you', 'your', 'yours' 'they', 'them', 'their', 'it', 'its'])
 
 	cur = conn.cursor()
 
@@ -89,6 +89,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 	cur.execute(SQL2)
 	lat_long_lookup = dict([(g[0], [g[1],g[2]]) for g in cur.fetchall()])
 	print len(lat_long_lookup)
+	point_total_correct = 0
+	poly_total_correct = 0
 
 	if os.path.isdir(test_xml) == True:
 		print "Reading as directory"
@@ -109,8 +111,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
 			wordref, toporef = parse_xml(test_xml + '/' + xml)
-			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, 
-				percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl)
+			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, 
+				percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl, point_total_correct, poly_total_correct)
 			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
 		point_dist_list.sort()
 		poly_dist_list.sort()
@@ -133,8 +135,10 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 		print "Place name weight:", place_name_weight
 		print "Point Average Error Distance @ 1: ", ((float(point_error_sum)/float(total_topo)))
 		print "Point Median Error Distance @ 1: ", point_dist_list[total_topo/2]
+		print "Point Accuracy @ 50km : ", float(point_total_correct) / float(total_topo)
 		print "Polygon Average Error Distance @ 1: ", ((float(poly_error_sum)/float(total_topo)))
 		print "Polygon Median Error Distance @ 1: ", poly_dist_list[total_topo/2]
+		print "Polygon Accuracy @ 50km : ", float(poly_total_correct) / float(total_topo)
 		conn.close()
 	elif os.path.isdir(test_xml) == False:
 		print "Reading as file"
@@ -177,7 +181,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 		conn.close()
 
 
-def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl):
+def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml,
+ point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl, point_total_correct, poly_total_correct):
 	for j in toporef:
 		print "=======Vector Sum=============="
 		total_topo += 1
@@ -302,11 +307,15 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 					point_bigerror.append([toporef[j][0], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
 				if polydist > 1000.0:
 					poly_bigerror.append([toporef[j][0], polydist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+				if pointdist <= 50.0:
+					point_total_correct += 1
+				if polydist <= 50.0:
+					poly_total_correct += 1
 				point_error += pointdist
 				poly_error += polydist
 		#print "====================="
 		#print len(contextlist)
-	return point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list
+	return point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct
 
 def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, US_Prominent_tbl, Wrld_Prominent_tbl):
 	names = tuple(x for x in placenames)
