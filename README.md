@@ -17,7 +17,12 @@ Modes
 This TopoCluster mode takes document training files and outputs a table with point geographies in PostgreSQL. Right now these scripts assume that the lat/long contained in the training files is in an unprojected WGS 84 Datum.
 
 ```
-python TopoCluster.py -mode loadDB -tf /directory/wikipedia_training.data.txt -traintype wiki -dtbl wikipedia_geography -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
+python TopoCluster.py 
+-mode loadDB 
+-tf /directory/wikipedia_training.data.txt 
+-traintype wiki 
+-dtbl wikipedia_geography 
+-conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
 
 Argument Explanation:
@@ -30,6 +35,7 @@ Argument Explanation:
 
 Use of this mode requires installation of Python's Numpy/Scipy packages.
 
+(Remove returns between arguments)
 ```
 python TopoCluster.py 
 -mode morans_calc 
