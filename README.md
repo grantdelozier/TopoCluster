@@ -67,4 +67,38 @@ Argument Explanation:
 * -outf (a text file that moran's coeficients will be written to)
 * -cores (the number of cores to utilize for Moran's calculations. The moran's calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus.)
 
+### Calculate Local Spatial Statistics
+
+Use of this mode requires Numpy to be installed. This mode takes in a document training file and outputs local spatial statistics to a PostgreSQL table.
+
+(Remove returns between arguments)
+```
+python TopoCluster.py 
+-mode morans_calc 
+-tf /directory/wikipedia_training.data.txt 
+-traintype wiki 
+-dtbl wikipedia_geography
+-gtbl globalgrid_5_clip
+-conn "dbname=mydbname user=myusername host='localhost' password=' '"
+-kern_dist 100000
+-kern_type epanech
+-include_zero False
+-statistic gi
+-out_tbl wikipedia_training_epanech100km
+-cores 2
+```
+
+Argument Explanation:
+* -tf (accepts a string that points to a training file, it should have schema like the sample training data provided with this repository)
+* -traintype (accepts wiki or twitter as arguments. these datasets have slightly different schema so this is necessary)
+* -dtbl (name of the table containing -tf document geographies)
+* -gtbl (name of the grid table from which aggregations will be made)
+* -conn (a string corresponding to psycopg2 connection information. In the future this argument will be removed altogether in favor of a .config file with this information)
+* -kern_dist (the distance (in meters) that defines the bandwidth of the kernel function)
+* -kern_type (type of kernel function to use for weighting of local statistic calculations. Currently excepts uniform or epanech as arguments)
+* -include_zero (accepts True or False as arguments. True will write local stat values of 0 to the table. False will only write values > 0. It is strongly recommended to leave this set as False.)
+* -statistic (type of local spatial statistic to calculate. Currently accepts zavg and gi as arguments)
+* -out_tbl (table to which local statistic results will be written to. If a table already exists then it will have its previous contents deleted prior to insertion. Right now there is a limit to the character length of words that can be inserted (50 charvar).)
+* -cores (the number of cores to utilize for local statistic calculations. The local statistic calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus. It is recommended to leave 1/2 the number of cores open so that they can be devoted to postgreSQL processes that will be spawned.)
+
 
