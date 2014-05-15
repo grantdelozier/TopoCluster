@@ -9,7 +9,7 @@ Most modes of this application require that you have PostgreSQL 9.x or later ins
 
 This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
 
-Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the projects main class (TopoCluster.py) for information on all modes and options.
+Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the project's main class (TopoCluster.py) for information on all modes and options.
 
 Modes
 =====
