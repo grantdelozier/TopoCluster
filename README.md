@@ -7,7 +7,9 @@ This application is built with Python 2.7.x in mind. This readme assumes that it
 
 Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
 
-This application also has package dependencies. It is assumed that psycopg2 is installed https://pypi.python.org/pypi/psycopg2
+This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
+
+Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the projects main class (TopoCluster.py) for information on all modes and options.
 
 Modes
 =====
@@ -100,5 +102,30 @@ Argument Explanation:
 * -statistic (type of local spatial statistic to calculate. Currently accepts zavg and gi as arguments)
 * -out_tbl (table to which local statistic results will be written to. If a table already exists then it will have its previous contents deleted prior to insertion. Right now there is a limit to the character length of words that can be inserted (50 charvar).)
 * -cores (the number of cores to utilize for local statistic calculations. The local statistic calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus. It is recommended to leave 1/2 the number of cores open so that they can be devoted to postgreSQL processes that will be spawned.)
+
+### Resolve Toponyms
+
+This mode disambiguates place names and then evaluates disambiguations against the TR-ConLL test set.
+
+This mode additionally requires the use of gazetteers downloaded from http://www.naturalearthdata.com/downloads/ The disambiguator is capable of using country, region, state, and city shapefiles downloaded from the website. These files should be loaded into the PostgreSQL DB before running.
+
+(Remove returns between arguments)
+```
+python TopoCluster.py 
+-mode topo_test
+-tstf /home/dir/trconllf/xml/test
+-stat_tbl wikipedia_training_epanech100km_gi
+-gtbl globalgrid_5_clip
+-conn "dbname=mydbname user=myusername host='localhost' password=' '"
+-percentile .25 
+-window 15 
+-place_name_weight 50.0 
+-country_tbl countries_2010 
+-region_tbl wrldregions
+-state_tbl us_states_2010 
+-us_prom_tbl us_prominentplace
+-world_prom_tbl worldcities
+```
+
 
 
