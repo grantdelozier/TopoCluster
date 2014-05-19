@@ -62,7 +62,7 @@ def Load(tf, tbl_name, conn_info, traintype):
                     page_name = row[1]
                     latit = row[2].split(',')[0]
                     longit = row[2].split(',')[1]
-                    F_Freq = row[9]
+                    #F_Freq = row[9]
                 newDocument = Document(userID, latit, longit, filename)
                 docList.append(newDocument)
             except:
@@ -81,7 +81,7 @@ def Load(tf, tbl_name, conn_info, traintype):
 
     cur = conn.cursor()
 
-    cur.execute("CREATE TABLE IF NOT EXISTS %s (uid varchar(20) primary key, latit float, longit float, geog Geography(Point, 4326), filefrom varchar(50));" % (tbl_name, ))
+    cur.execute("CREATE TABLE IF NOT EXISTS %s (gid varchar(20) primary key, latit float, longit float, geog Geography(Point, 4326), filefrom varchar(50));" % (tbl_name, ))
 
     cur.execute("DELETE FROM %s" % tbl_name)
 
@@ -98,6 +98,6 @@ def Load(tf, tbl_name, conn_info, traintype):
     conn.commit()
     conn.close()
 
-    print "Number of documents loaded: ", len(docList)
+    print "Number of documents/points loaded: ", len(docList)
 
     print "Done Loading ", tbl_name

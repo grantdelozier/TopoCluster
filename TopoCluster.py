@@ -297,9 +297,23 @@ if len(sys.argv) >= 3:
         except:
             print "You did not provide a region table argument"
             sys.exit("Error")
+
+        #US Prominent Table Name
+        try:
+            us_prom_tbl = args[args.index('-us_prom_tbl')+1]
+        except:
+            print "You did not provide a prominent US city table argument"
+            sys.exit("Error")
+
+        #US Prominent Table Name
+        try:
+            world_prom_tbl = args[args.index('-world_prom_tbl')+1]
+        except:
+            print "You did not provide a prominent WORLD city table argument"
+            sys.exit("Error")
         
 
-        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl)  
+        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, us_prom_tbl, world_prom_tbl)  
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans

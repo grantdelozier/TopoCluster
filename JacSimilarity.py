@@ -19,14 +19,39 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func):
 
     syn_link = {}
 
+    total_sets = 0
+    syn_pairs = set([])
+    size_before = 0
+    size_after = 0
+
     with io.open(synfile, 'r', encoding='utf-8') as w:
         for line in w:
+            if size_before != size_after:
+                total_sets += 1
+            size_before = len(syn_pairs)
             row = line.strip().split('\t')
             for i in range(0, len(row)):
                 linklist = [row[j] for j in range(0, len(row)) if j!=i]
-                syn_link.setdefault(row[i], list()).extend(linklist)
+                addlist = []
+                for p in linklist:
+                    if p[:len(p)-3] in row[i] and "ing" == p[-3:] or row[i][:len(row[i])-3] in p and "ing" == row[i][-3:]:
+                        pass
+                        #addlist.append(p)
+                        #print row[i], p
+                    else: addlist.append(p)
+                syn_pairs |= set([row[i]+'|'+m for m in addlist if m+'|'+row[i] not in syn_pairs])
+                #syn_pairs += len(linklist)
+                syn_link.setdefault(row[i], list()).extend(addlist)
+            size_after = len(syn_pairs)
 
-    print syn_link["abode"]
+
+    #for thing in syn_pairs:
+    #    print thing
+    print total_sets
+    print len(syn_pairs)
+    #sys.exit()
+    #print syn_link["abode"]
+
 
     #Connecting to Database
     conn = psycopg2.connect(conn_info)
@@ -45,7 +70,26 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func):
     cur.execute("SELECT DISTINCT word from %s;" % stat_tbl)
     appearingwords = [w[0] for w in cur.fetchall()]
 
-    for s in syn_link:
+    for s in syn_pairs:
+        s1 = s.split('|')[0]
+        s2 = s.split('|')[1]
+        if s1 in appearingwords and s2 in appearingwords:
+            cur.execute(SQL_Fetch, (s1, ))
+            s1_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
+            cur.execute(SQL_Fetch, (s2, ))
+            s2_dict = dict([(x[0], float(x[1])) for x in cur.fetchall()])
+            simscore = WeightedJac(s1_dict, s2_dict)
+            sim_dict[s] = simscore
+        m += 1
+        if m % 100 == 0:
+            print "Left to go: ", len(syn_pairs) - m
+            print datetime.datetime.now()
+
+    print "Number of similarity scores calculated:", len(sim_dict)
+
+
+
+    '''for s in syn_link:
         #print s
         if s in appearingwords:
             cur.execute(SQL_Fetch, (s, ))
@@ -61,7 +105,7 @@ def calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func):
         m += 1
         if m % 200 == 0:
             print "Left to go: ", len(syn_link) - m
-            print datetime.datetime.now()
+            print datetime.datetime.now()'''
 
     print "Done calculating synset similarity scores"
 

@@ -16,14 +16,27 @@ Modes
 
 ### Load Database with Document Geographies
 
-This TopoCluster mode takes document training files and outputs a table with point geographies in PostgreSQL. Right now these scripts assume that the lat/long contained in the training files is in an unprojected WGS 84 Datum.
+This TopoCluster mode takes document or grid files and outputs a table with point geographies in PostgreSQL. Right now these scripts assume that the lat/long contained in the training files is in an unprojected WGS 84 Datum.
+
+Load Document Geographies
 
 ```
 python TopoCluster.py 
 -mode loadDB 
--tf /directory/wikipedia_training.data.txt 
+-tf data/wikipedia_sample.txt 
 -traintype wiki 
--dtbl wikipedia_geography 
+-dtbl wikipedia_sample_geography 
+-conn "dbname=mydbname user=myusername host='localhost' password=' '" 
+```
+
+Load Grid Table
+
+```
+python TopoCluster.py 
+-mode loadDB 
+-tf data/globalgrid_5_clip.txt 
+-traintype wiki 
+-dtbl globalgrid_5_clip_geog
 -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
 
