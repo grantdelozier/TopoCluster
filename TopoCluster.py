@@ -35,11 +35,11 @@ if len(sys.argv) >= 3:
             sys.exit("Error")
 
         #PROCESS ID (short term solution to multiprocess problems)
-        try:
-            procid = args[args.index("-procid")+1]
-        except:
-            print "You did not provide process id"
-            sys.exit("Error")
+        #try:
+        #    procid = args[args.index("-procid")+1]
+        #except:
+        #    print "You did not provide process id"
+        #    sys.exit("Error")
 
         #Pointgrid table name
         try:
@@ -131,7 +131,7 @@ if len(sys.argv) >= 3:
             include_zero = True
 
 
-        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores, include_zero, procid)
+        LSS.calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_min, cores, include_zero)
         
 
     ##########################Load a database with | Doc ID | Geometry | table#####################
@@ -224,7 +224,7 @@ if len(sys.argv) >= 3:
 
    ###################Test Toponym Resolver on TRConll#####################
     if mode_arg.lower() == "topo_test":
-        import TestResolverV1 as tstr
+        import TestResolverV5 as tstr
         print "Starting test of topo resolver on TRConll"
 
         #Statistics Table (Zavg/Gi*)
@@ -277,6 +277,13 @@ if len(sys.argv) >= 3:
             print "You did not provide a window argument, defaulting to 10"
             place_name_weight = 10.0
 
+        #Test Table Name
+        try:
+            tst_tbl = args[args.index('-tst_tbl')+1]
+        except:
+            print "You did not provide a test table argument"
+            sys.exit("Error")
+
         #Country Table Name
         try:
             country_tbl = args[args.index('-country_tbl')+1]
@@ -298,22 +305,29 @@ if len(sys.argv) >= 3:
             print "You did not provide a region table argument"
             sys.exit("Error")
 
-        #US Prominent Table Name
+        #Geonames Table Name
         try:
-            us_prom_tbl = args[args.index('-us_prom_tbl')+1]
+            geonames_tbl = args[args.index('-geonames_tbl')+1]
         except:
-            print "You did not provide a prominent US city table argument"
+            print "You did not provide a geonames table argument"
             sys.exit("Error")
 
         #US Prominent Table Name
-        try:
-            world_prom_tbl = args[args.index('-world_prom_tbl')+1]
-        except:
-            print "You did not provide a prominent WORLD city table argument"
-            sys.exit("Error")
+        #try:
+        #    us_prom_tbl = args[args.index('-us_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent US city table argument"
+        #    sys.exit("Error")
+
+        #US Prominent Table Name
+        #try:
+        #    world_prom_tbl = args[args.index('-world_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent WORLD city table argument"
+        #    sys.exit("Error")
         
 
-        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, us_prom_tbl, world_prom_tbl)  
+        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl)  
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans
