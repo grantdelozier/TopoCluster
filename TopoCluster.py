@@ -327,7 +327,122 @@ if len(sys.argv) >= 3:
         #    sys.exit("Error")
         
 
-        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl)  
+        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl)
+
+    ###################Test Toponym Resolver Using NER#####################
+    if mode_arg.lower() == "topo_test_ner":
+        import TestResolverV3_NER as tstr
+        print "Starting test of topo resolver on TRConll"
+
+        #Statistics Table (Zavg/Gi*)
+        try:
+            stat_tbl = args[args.index("-stat_tbl")+1]
+        except:
+            print "You did not provide a name for a statistics table to use"
+            sys.exit("Error")
+
+        #Path containing stanford NER jar file
+        try:
+            stan_path = args[args.index("-stan_path")+1]
+        except:
+            print "You did not a directory for the stanford NER jar"
+            sys.exit("Error")
+
+        #Train file, dev file, or tst file
+        if '-tf' in args:
+            f = args[args.index("-tf")+1]
+        elif '-df' in args:
+            f = args[args.index("-df")+1]
+        elif '-tstf' in args:
+            f = args[args.index("-tstf")+1]
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        #Pointgrid table name
+        try:
+            gtbl = args[args.index('-gtbl')+1]
+        except:
+            print "You did not provide a grid table argument"
+            sys.exit("Error")
+
+        #context window size
+        try:
+            window = int(args[args.index('-window')+1])
+        except:
+            print "You did not provide a window argument, defaulting to 15"
+            window = 15
+
+        #percentile of selection
+        try:
+            percentile = float(args[args.index('-percentile')+1])
+        except:
+            print "You did not provide a window argument, defaulting to .5"
+            percentile = .5
+
+        #percentile of selection
+        try:
+            place_name_weight = float(args[args.index('-place_name_weight')+1])
+        except:
+            print "You did not provide a window argument, defaulting to 10"
+            place_name_weight = 10.0
+
+        #Test Table Name
+        try:
+            tst_tbl = args[args.index('-tst_tbl')+1]
+        except:
+            print "You did not provide a test table argument"
+            sys.exit("Error")
+
+        #Country Table Name
+        try:
+            country_tbl = args[args.index('-country_tbl')+1]
+        except:
+            print "You did not provide a country table argument"
+            sys.exit("Error")
+
+        #Region Table Name
+        try:
+            region_tbl = args[args.index('-region_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
+
+        #State Table Name
+        try:
+            state_tbl = args[args.index('-state_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
+
+        #Geonames Table Name
+        try:
+            geonames_tbl = args[args.index('-geonames_tbl')+1]
+        except:
+            print "You did not provide a geonames table argument"
+            sys.exit("Error")
+
+        #US Prominent Table Name
+        #try:
+        #    us_prom_tbl = args[args.index('-us_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent US city table argument"
+        #    sys.exit("Error")
+
+        #US Prominent Table Name
+        #try:
+        #    world_prom_tbl = args[args.index('-world_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent WORLD city table argument"
+        #    sys.exit("Error")
+        
+
+        tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, stan_path)  
+
     ##################Perform Moran's Calculations#################
     if mode_arg.lower() == "calc_morans":
         import MoransV1 as morans
