@@ -6,7 +6,7 @@ import datetime
 import io
 import math
 import numpy
-import SuperDocument as sp
+#import SuperDocument as sp
 from collections import Counter
 
 import KernelFunctionsV1 as KF
@@ -14,7 +14,7 @@ import KernelFunctionsV1 as KF
 import operator
 
 import random
-import SuperDocument as sp
+#import SuperDocument as sp
 class Document:
 
     userID = ""
@@ -26,7 +26,7 @@ class Document:
     Feature_Prob = {}
     outside_word_prob = 0
     fileFrom = ""
-    stats_dictionary = sp.SuperDocument()
+    #stats_dictionary = sp.SuperDocument()
 
     def __init__(self, ID, latit, longit, F_Freq, file_from, listuse, whitelist, aggLM=False):
         self.userID = ID
@@ -35,16 +35,16 @@ class Document:
         #self.Feature_Freq = F_Freq
         self.fileFrom = file_from
         tw = 0
-        N_1 = 0
+        #N_1 = 0
         if aggLM == False:
             for f in F_Freq:
                 val = int(F_Freq[f])
-                if val == 1:
-                    N_1 += 1
+                #if val == 1:
+                #    N_1 += 1
                 tw += val
         self.total_words = tw
-        Document.stats_dictionary.add(F_Freq)
-        self.OOV_prob = float(N_1)/float(tw)
+        #Document.stats_dictionary.add(F_Freq)
+        #self.OOV_prob = float(N_1)/float(tw)
         if aggLM==False:
             self.CalcUnigramProb(F_Freq, listuse, whitelist)
 
@@ -269,52 +269,53 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         for person in f:
             #print "####NEW Person####"
             #print userID, latit, longit
-            try:
-                row = person.strip().split('\t')
-                #print row[0]
+            #try:
+            row = person.strip().split('\t')
+            #print row[0]
 
-                if traintype == "twitter":
-                    #print row[0]
-                    userID = row[0]
-                    latit = row[1].split(',')[0]
-                    longit = row[1].split(',')[1]
-                    if UseAggLMs == False:
-                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[2].split(" "))
-                        if listuse == 'any':
-                            F_All |= set(F_Freq.keys())
-                        if listuse == 'restricted':
-                            F_All |= set([j for j in F_Freq if j in whitelist])
-                        newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
-                        docDict[userID] = newDoc.Feature_Prob
-                    elif UseAggLMs == True:
-                        F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
-                        if listuse == 'any':
-                            F_All |= set(F_Freq.keys())
-                        if listuse == 'restricted':
-                            F_All |= set([j for j in F_Freq if j in whitelist])
-                        docDict[userID] = F_Freq
-                elif traintype == "wiki":
-                    userID = row[0]
-                    page_name = row[1]
-                    latit = row[2].split(',')[0]
-                    longit = row[2].split(',')[1]
-                    if UseAggLMs == False:
-                        F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[9].split(" "))
-                        #F_All |= set(F_Freq.keys())
-                        newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
-                        if listuse == 'any':
-                            F_All |= set(F_Freq.keys())
-                        if listuse == 'restricted':
-                            F_All |= set([j for j in F_Freq if j in whitelist])
-                        docDict[newDoc.userID] = newDoc.Feature_Prob
-                    if UseAggLMs == True:
-                        print "Use Agg LM mode for wikipedia dataset not implemented"
-                        sys.exit("Error")
-            except:
-                print "@@@@@error reading user@@@@@@"
-                print row
-                print z
-                #sys.exit("Error")
+            if traintype == "twitter":
+                #print row[0]
+                userID = row[0]
+                latit = row[1].split(',')[0]
+                longit = row[1].split(',')[1]
+                if UseAggLMs == False:
+                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[2].split(" "))
+                    if listuse == 'any':
+                        F_All |= set(F_Freq.keys())
+                    if listuse == 'restricted':
+                        F_All |= set([j for j in F_Freq if j in whitelist])
+                    newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
+                    docDict[userID] = newDoc.Feature_Prob
+                elif UseAggLMs == True:
+                    F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[2].split(" "))
+                    if listuse == 'any':
+                        F_All |= set(F_Freq.keys())
+                    if listuse == 'restricted':
+                        F_All |= set([j for j in F_Freq if j in whitelist])
+                    docDict[userID] = F_Freq
+            elif traintype == "wiki":
+                userID = row[0]
+                page_name = row[1]
+                latit = row[2].split(',')[0]
+                longit = row[2].split(',')[1]
+                #print userID
+                if UseAggLMs == False:
+                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[-1].split(" "))
+                    #F_All |= set(F_Freq.keys())
+                    newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
+                    if listuse == 'any':
+                        F_All |= set(F_Freq.keys())
+                    if listuse == 'restricted':
+                        F_All |= set([j for j in F_Freq if j in whitelist])
+                    docDict[newDoc.userID] = newDoc.Feature_Prob
+                if UseAggLMs == True:
+                    print "Use Agg LM mode for wikipedia dataset not implemented"
+                    sys.exit("Error")
+            #except:
+            #    print "@@@@@error reading user@@@@@@"
+            #    print row
+            #    print z
+            #    #sys.exit("Error")
             z += 1
             if z % 5000 == 0:
                 print z

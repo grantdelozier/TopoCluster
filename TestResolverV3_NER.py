@@ -456,7 +456,8 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 
 		print "Done Creating Alt Names"
 		print "Length of PPL AltNames: ", len(pplc_alt)
-		ner_fp = 0
+		point_ner_fp = 0
+		poly_ner_fp = 0
 		ner_fn = 0
 		poly_ner_tp = 0
 		point_ner_tp = 0
@@ -472,9 +473,9 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 			#point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct = VectorSum(wordref, toporef, wordref2, toporef2, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, 
 			#	percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl,
 			#	 geonames_tbl, point_total_correct, poly_total_correct, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt)
-			ner_fp, ner_fn, point_ner_tp, poly_ner_tp, point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup,
+			point_ner_fp, poly_ner_fp, ner_fn, point_ner_tp, poly_ner_tp, point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup,
 			 stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl,
-			  state_tbl, geonames_tbl, point_total_correct, poly_total_correct, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, ner_fp, ner_fn, poly_ner_tp, point_ner_tp)
+			  state_tbl, geonames_tbl, point_total_correct, poly_total_correct, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, point_ner_fp, poly_ner_fp, ner_fn, poly_ner_tp, point_ner_tp)
 			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
 		point_dist_list.sort()
 		poly_dist_list.sort()
@@ -502,13 +503,13 @@ def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_wei
 		print "Polygon Median Error Distance @ 1: ", poly_dist_list[total_topo/2]
 		#print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
 
-		point_precision = float(point_ner_tp) / float(point_ner_tp + ner_fp)
+		point_precision = float(point_ner_tp) / float(point_ner_tp + point_ner_fp)
 		print "Point Precision: ", point_precision
 		point_recall = float(point_ner_tp) / float(point_ner_tp + ner_fn)
 		print "Point Recall: ", point_recall
 		print "Point F-1 Score: ", 2*((point_precision * point_recall) / (point_precision + point_recall))
 
-		poly_precision = float(poly_ner_tp) / float(poly_ner_tp + ner_fp)
+		poly_precision = float(poly_ner_tp) / float(poly_ner_tp + poly_ner_fp)
 		print "Poly Precision: ", poly_precision
 		poly_recall = float(poly_ner_tp) / float(poly_ner_tp + ner_fn)
 		print "Poly Recall: ", poly_recall
@@ -576,7 +577,7 @@ def getCorrectTable(word, tab1, tab2, tab3):
 
 def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml,
  point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, geonames_tbl, point_total_correct, 
- poly_total_correct, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, ner_fp, ner_fn, poly_ner_tp, point_ner_tp):
+ poly_total_correct, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, point_ner_fp, poly_ner_fp, ner_fn, poly_ner_tp, point_ner_tp):
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
@@ -719,16 +720,19 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, poin
 						if pointdist <= 161.0:
 							point_total_correct += 1
 							point_ner_tp += 1
+						else: point_ner_fp += 1
 						if polydist <= 161.0:
 							poly_total_correct += 1
 							poly_ner_tp += 1
+						else: poly_ner_fp += 1
 						point_error += pointdist
 						poly_error += polydist
 				#print "====================="
 				#print len(contextlist)
 		else:
 			print "NER False-Positive error: ", j, topobase
-			ner_fp += 1
+			point_ner_fp += 1
+			poly_ner_fp += 1
 	#Check for false negatives in the NER
 	for j in topoall:
 		if j in toporef2 and topoall[j] == toporef2[j]:
@@ -739,9 +743,9 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, poin
 	#print "NER True Positive: ", ner_tp
 	#print "NER False Positive: ", ner_fp
 	#print "NER False Negative: ", ner_fn
-	print "Poly Precision: ", float(poly_ner_tp) / float(poly_ner_tp + ner_fp)
+	print "Poly Precision: ", float(poly_ner_tp) / float(poly_ner_tp + poly_ner_fp)
 	print "Poly Recall: ", float(poly_ner_tp) / float(poly_ner_tp + ner_fn)
-	return ner_fp, ner_fn, point_ner_tp, poly_ner_tp, point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list
+	return point_ner_fp, poly_ner_fp, ner_fn, point_ner_tp, poly_ner_tp, point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list
 
 def VectorSum(wordref, toporef, wordref2, toporef2, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml,
  point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, geonames_tbl, point_total_correct, 
@@ -868,8 +872,8 @@ def VectorSum(wordref, toporef, wordref2, toporef2, total_topo, point_error, pol
 					polydist = (poly_results[0][0] / float(1000))
 				else: polydist = pointdist
 
-				print "Point Dist: ", pointdist
-				print "Poly Dist: ", polydist
+				#print "Point Dist: ", pointdist
+				#print "Poly Dist: ", polydist
 
 				point_dist_list.append(pointdist)
 				poly_dist_list.append(polydist)

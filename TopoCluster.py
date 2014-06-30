@@ -224,7 +224,7 @@ if len(sys.argv) >= 3:
 
    ###################Test Toponym Resolver on TRConll#####################
     if mode_arg.lower() == "topo_test":
-        import TestResolverV5 as tstr
+        import TestResolverV6_Pop as tstr
         print "Starting test of topo resolver on TRConll"
 
         #Statistics Table (Zavg/Gi*)
@@ -331,7 +331,7 @@ if len(sys.argv) >= 3:
 
     ###################Test Toponym Resolver Using NER#####################
     if mode_arg.lower() == "topo_test_ner":
-        import TestResolverV3_NER as tstr
+        import TestResolverV4_NER as tstr
         print "Starting test of topo resolver on TRConll"
 
         #Statistics Table (Zavg/Gi*)
