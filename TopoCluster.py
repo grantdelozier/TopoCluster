@@ -7,6 +7,48 @@ if len(sys.argv) >= 3:
     mode_arg = args[args.index("-mode")+1]
     print mode_arg
 
+    ####################Prepare a Table for visualization###############
+    if mode_arg.lower() == "prep_vis":
+        import Visualize_Simple as Viz
+
+        #Comma delimited listing of words to add together for Viz output
+        try:
+            words = args[args.index('-words')+1]
+        except: 
+            print "You did not provide any words to visualize"
+            sys.exit("Error")
+
+
+        #Pointgrid table name
+        try:
+            gtbl = args[args.index('-gtbl')+1]
+        except:
+            print "You did not provide a grid table argument"
+            sys.exit("Error")
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        #Output Viz Table
+        try:
+            out_tbl = args[args.index('-out_tbl')+1]
+        except:
+            print "Did not provide a valid out table name"
+            out_tbl = "localspatstat_tmp"
+
+        #Statistics Table (Zavg/Gi*)
+        try:
+            stat_tbl = args[args.index("-stat_tbl")+1]
+        except:
+            print "You did not provide a name for a statistics table to use"
+            sys.exit("Error")
+
+        Viz.calc(words, gtbl, stat_tbl, out_tbl, conn_info)
+
     ##########################Local Spatial Stastics Mode (Gi*, Zavg)#######################
     if mode_arg.lower() == "local_stats":
         import LocalSpatialStatsV1 as LSS
@@ -222,10 +264,10 @@ if len(sys.argv) >= 3:
 
         JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
-   ###################Test Toponym Resolver on TRConll#####################
+   ###################Test Toponym Resolver#####################
     if mode_arg.lower() == "topo_test":
-        import TestResolverV6_Pop as tstr
-        print "Starting test of topo resolver on TRConll"
+        import TestResolver_LGL as tstr
+        #print "Starting test of topo resolver on TRConll"
 
         #Statistics Table (Zavg/Gi*)
         try:
