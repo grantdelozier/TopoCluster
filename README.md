@@ -35,7 +35,10 @@ tar -xzvf globalgrid_5_clip.txt.tar.gz
 
 ```
 
-
+Install Geowikipedia Gi* Statistics tables
+```
+wget -r http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/
+```
 
 
 
