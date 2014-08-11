@@ -3,9 +3,18 @@ TopoCluster
 
 TopoCluster uses a geostatistical based approach to describe lexical variation over geography and perform Toponym Resolution.
 
+Installation
+============
+
 This application is built with Python 2.7.x in mind. This readme assumes that it has been installed and that the python executable had been added to one's PATH.
 
 Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
+
+Ubuntu Intallation
+```
+sudo apt-get install postgresql-9.3
+```
+
 
 This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
 
