@@ -10,9 +10,12 @@ This application is built with Python 2.7.x in mind. This readme assumes that it
 
 Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
 
-Ubuntu Intallation
+Ubuntu Postgres Intallation
 ```
 sudo apt-get install postgresql-9.3
+sudo apt-get install postgresql-9.3-postgis-2.1
+sudo -u postgres psql postgres
+
 ```
 
 
