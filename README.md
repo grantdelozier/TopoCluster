@@ -28,6 +28,13 @@ sudo apt-get install python-psycopg2
 
 ```
 
+Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
+```
+tar -xzvf globalgrid_5_clip.txt.tar.gz
+
+```
+
+
 
 
 
@@ -56,12 +63,7 @@ python TopoCluster.py
 Load Grid Table
 
 ```
-python TopoCluster.py 
--mode loadDB 
--tf data/globalgrid_5_clip.txt 
--traintype wiki 
--dtbl globalgrid_5_clip_geog
--conn "dbname=mydbname user=myusername host='localhost' password=' '" 
+python TopoCluster.py -mode loadDB -tf data/globalgrid_5_clip.txt -traintype wiki -dtbl globalgrid_5_clip_geog -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
 
 Argument Explanation:
