@@ -15,8 +15,20 @@ Ubuntu Postgres Intallation
 sudo apt-get install postgresql-9.3
 sudo apt-get install postgresql-9.3-postgis-2.1
 sudo -u postgres psql postgres
+\password postgres
+create database testdb;
+\connect testdb
+CREATE EXTENSION postgis;
+\q
+```
+
+Ubuntu Psycopg2 Installation 
+```
+sudo apt-get install python-psycopg2
 
 ```
+
+
 
 
 This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
