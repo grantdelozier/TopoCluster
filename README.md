@@ -10,7 +10,7 @@ This application is built with Python 2.7.x in mind. This readme assumes that it
 
 Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
 
-Ubuntu Postgres Intallation
+### Ubuntu Postgres Intallation
 ```
 sudo apt-get install postgresql-9.3
 sudo apt-get install postgresql-9.3-postgis-2.1
@@ -23,19 +23,21 @@ CREATE EXTENSION postgis;
 \q
 ```
 
-Ubuntu Psycopg2 Installation 
+This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
+
+### Ubuntu Psycopg2 Installation 
 ```
 sudo apt-get install python-psycopg2
 
 ```
 
-Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
+### Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
 ```
 tar -xzvf globalgrid_5_clip.txt.tar.gz
 
 ```
 
-Install Geowikipedia Gi* Statistics tables
+### Download Geowikipedia Gi* Statistics tables
 ```
 cd data
 wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_atoi.backup
@@ -44,9 +46,23 @@ wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups
 wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_other.backup
 ```
 
+### Download Gazetteer tables
+```
+cd data
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/geonames_all.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/countries_2012.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/regions_2012.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/states_2012.backup
+```
 
+### Restore Gazetteer Tables to DB
+```
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose countries_2012.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose geonames_all.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose regions_2012.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose states_2012.backup
+```
 
-This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
 
 Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the project's main class (TopoCluster.py) for information on all modes and options.
 
