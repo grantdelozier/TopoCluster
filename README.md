@@ -52,7 +52,7 @@ python TopoCluster.py -mode loadDB \
 ```
 
 ### Download Geowikipedia Gi* Statistics and Gazetteer tables
-Navigate to TopoCluster main directory
+Navigate to TopoCluster main directory. Run the shell script to begin downloads of tables.
 ```
 bash download_gazets.sh
 ```
