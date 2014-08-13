@@ -12,7 +12,7 @@ Most modes of this application require that you have PostgreSQL 9.x or later ins
 
 Setting up the files necessary to complete installation takes about 30 GBs of hard drive space.
 
-### Ubuntu Postgres Intallation'
+### Ubuntu Postgres Intallation
 
 
 ```
@@ -35,10 +35,20 @@ sudo apt-get install python-psycopg2
 
 ```
 
-### Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
+###Create Global Grid Tables
+
+Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
 ```
 tar -xzvf globalgrid_5_clip.txt.tar.gz
 
+```
+Create the Global Grid table from the text file
+```
+python TopoCluster.py -mode loadDB \ 
+-tf data/globalgrid_5_clip.txt \
+-traintype wiki \
+-dtbl globalgrid_5_clip_geog \
+-conn "dbname=testdb user=postgres host='localhost' password=' '" 
 ```
 
 ### Download Geowikipedia Gi* Statistics tables
@@ -88,7 +98,7 @@ python TopoCluster.py
 -conn "dbname=mydbname user=myusername host='localhost' password='pass'" 
 ```
 
-Load Grid Table
+Load Grid Table (if not already done)
 
 ```
 python TopoCluster.py -mode loadDB \ 
