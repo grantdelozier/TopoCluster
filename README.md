@@ -51,23 +51,13 @@ python TopoCluster.py -mode loadDB \
 -conn "dbname=testdb user=postgres host='localhost' password=' '" 
 ```
 
-### Download Geowikipedia Gi* Statistics tables
+### Download Geowikipedia Gi* Statistics and Gazetteer tables
+Navigate to TopoCluster main directory
 ```
-cd data
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_atoi.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_jtos.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_ttoz.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_other.backup
+bash download_gazets.sh
 ```
+This downloads about 20 GB worth of files and could take a while.
 
-### Download Gazetteer tables
-```
-cd data
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/geonames_all.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/countries_2012.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/regions_2012.backup
-wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/states_2012.backup
-```
 
 ### Restore Gazetteer Tables to DB
 ```
@@ -77,6 +67,14 @@ pg_restore --host localhost --port 5432 --username postgres --dbname testdb --sc
 pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose states_2012.backup
 ```
 
+### Restore Gi* Statistics Tables to DB
+```
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose enwiki20130102_ner_final_other.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose enwiki20130102_ner_final_ttoz.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose enwiki20130102_ner_final_jtos.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose enwiki20130102_ner_final_atoi.backup
+```
+Some of these tables are very large and include indexes. Restoring them could take several hours.
 
 Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the project's main class (TopoCluster.py) for information on all modes and options.
 
