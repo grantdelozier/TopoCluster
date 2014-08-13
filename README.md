@@ -8,9 +8,13 @@ Installation
 
 This application is built with Python 2.7.x in mind. This readme assumes that it has been installed and that the python executable had been added to one's PATH.
 
-Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
+Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application. Examples of how to do the installation and setup on a Ubuntu system is demonstrated below.
 
-### Ubuntu Postgres Intallation
+Setting up the files necessary to complete installation takes about 30 GBs of hard drive space.
+
+### Ubuntu Postgres Intallation'
+
+
 ```
 sudo apt-get install postgresql-9.3
 sudo apt-get install postgresql-9.3-postgis-2.1
