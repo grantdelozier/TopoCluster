@@ -3,11 +3,80 @@ TopoCluster
 
 TopoCluster uses a geostatistical based approach to describe lexical variation over geography and perform Toponym Resolution.
 
+Installation
+============
+
 This application is built with Python 2.7.x in mind. This readme assumes that it has been installed and that the python executable had been added to one's PATH.
 
-Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application.
+Most modes of this application require that you have PostgreSQL 9.x or later installed, along with PostGIS extensions. One should have created a database and added the postgis extension to the database prior to working with this application. Examples of how to do the installation and setup on a Ubuntu system is demonstrated below.
+
+Setting up the files necessary to complete installation takes about 30 GBs of hard drive space.
+
+### Ubuntu Postgres Intallation
+
+
+```
+sudo apt-get install postgresql-9.3
+sudo apt-get install postgresql-9.3-postgis-2.1
+sudo -u postgres psql postgres
+\password postgres
+(Enter non blank password)
+create database testdb;
+\connect testdb
+CREATE EXTENSION postgis;
+\q
+```
 
 This application also has package dependencies. It is assumed that psycopg2 is installed (https://pypi.python.org/pypi/psycopg2). Some modes require additional packages (e.g. the morans calculation mode requires Numpy and significance testing in this mode requires Scipy).
+
+### Ubuntu Psycopg2 Installation 
+```
+sudo apt-get install python-psycopg2
+
+```
+
+###Create Global Grid Tables
+
+Navigate to the data folder inside the TopoCluster main directory. Extract the tar files
+```
+tar -xzvf globalgrid_5_clip.txt.tar.gz
+
+```
+Create the Global Grid table from the text file
+```
+python TopoCluster.py -mode loadDB \ 
+-tf data/globalgrid_5_clip.txt \
+-traintype wiki \
+-dtbl globalgrid_5_clip_geog \
+-conn "dbname=testdb user=postgres host='localhost' password=' '" 
+```
+
+### Download Geowikipedia Gi* Statistics tables
+```
+cd data
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_atoi.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_jtos.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_ttoz.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/enwiki20130102_ner_final_other.backup
+```
+
+### Download Gazetteer tables
+```
+cd data
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/geonames_all.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/countries_2012.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/regions_2012.backup
+wget http://web.corral.tacc.utexas.edu/utcompling/topocluster-data/table_backups/states_2012.backup
+```
+
+### Restore Gazetteer Tables to DB
+```
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose countries_2012.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose geonames_all.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose regions_2012.backup
+pg_restore --host localhost --port 5432 --username postgres --dbname testdb --schema public --verbose states_2012.backup
+```
+
 
 Documentation of all modes and arguments is still somewhat incomplete. Users are encouraged to view the project's main class (TopoCluster.py) for information on all modes and options.
 
@@ -26,17 +95,16 @@ python TopoCluster.py
 -tf data/wikipedia_sample.txt 
 -traintype wiki 
 -dtbl wikipedia_sample_geography 
--conn "dbname=mydbname user=myusername host='localhost' password=' '" 
+-conn "dbname=mydbname user=myusername host='localhost' password='pass'" 
 ```
 
-Load Grid Table
+Load Grid Table (if not already done)
 
 ```
-python TopoCluster.py 
--mode loadDB 
--tf data/globalgrid_5_clip.txt 
--traintype wiki 
--dtbl globalgrid_5_clip_geog
+python TopoCluster.py -mode loadDB \ 
+-tf data/globalgrid_5_clip.txt \
+-traintype wiki \
+-dtbl globalgrid_5_clip_geog \
 -conn "dbname=mydbname user=myusername host='localhost' password=' '" 
 ```
 
