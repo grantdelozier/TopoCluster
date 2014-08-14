@@ -459,9 +459,12 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Done Creating Alt Names"
 		print "Length of PPL AltNames: ", len(pplc_alt)
 		#Create data structure to contain all median, mean, asccuracy results at each in domain lambda
-		lamb_dict_totals = {}
-		for i in range(0, 10+1):
-			lamb_dict_totals[round((Decimal(i)*Decimal(0.1)), 2)] = {}
+		theta_range = [0.5, 1.0, 2.0, 3.0. 4.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0]
+		theta_dict_totals = {}
+		for i in theta_range:
+			for j in theta_range:
+				for k in theta_range:
+					theta_dict_totals["MT_"+str(i)+"_OT_"+str(j)+"_OW_"+str(k)] = {}
 
 		for xml in files:
 			m += 1
@@ -471,7 +474,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			wordref, toporef = parse_xml(test_xml+'/'+xml)
 			lamb_dict_total, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
 				percentile, window, stopwords, place_name_weight, xml, country_tbl, region_tbl, state_tbl,
-				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, lamb_dict_totals)			
+				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, theta_dict_totals)			
 			
 		point_dist_list.sort()
 		poly_dist_list.sort()
