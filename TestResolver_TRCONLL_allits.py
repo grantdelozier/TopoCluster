@@ -345,7 +345,7 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
-def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
+def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, country_tbl, 
 	region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file):
 	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
 	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
@@ -354,9 +354,6 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	print "Grid table used: ", gtbl
 	print "Window size", window
 	print "Percentile: ", percentile
-	print "Main Toponym weight: ", main_topo_weight
-	print "Other Toponym weight: ", other_topo_weight
-	print "Other Word weight: ", other_word_weight
 
 	print "Country table name: ", country_tbl
 	print "Region table name: ", region_tbl
@@ -459,12 +456,18 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Done Creating Alt Names"
 		print "Length of PPL AltNames: ", len(pplc_alt)
 		#Create data structure to contain all median, mean, asccuracy results at each in domain lambda
-		theta_range = [0.5, 1.0, 2.0, 3.0. 4.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0]
+		theta_range = [0.5, 1.0, 5.0, 10.0, 20.0, 30.0, 40.0]
 		theta_dict_totals = {}
 		for i in theta_range:
 			for j in theta_range:
 				for k in theta_range:
 					theta_dict_totals["MT_"+str(i)+"_OT_"+str(j)+"_OW_"+str(k)] = {}
+		print "Number Theta iterations:", len(theta_dict_totals)
+
+		#Pleas comment out at a later date
+		in_corp_lamb = 0.1
+		out_corp_lamb = 0.9
+
 
 		for xml in files:
 			m += 1
@@ -472,30 +475,29 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
 			wordref, toporef = parse_xml(test_xml+'/'+xml)
-			lamb_dict_total, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
-				percentile, window, stopwords, place_name_weight, xml, country_tbl, region_tbl, state_tbl,
-				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, theta_dict_totals)			
+			theta_dict_totals, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
+				percentile, window, stopwords, xml, country_tbl, region_tbl, state_tbl,
+				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, theta_dict_totals)			
 			
-		point_dist_list.sort()
-		poly_dist_list.sort()
+		#point_dist_list.sort()
+		#poly_dist_list.sort()
 		#print "============Most Overlap==============="
 		#print "Total Toponyms: ", total_topo
 		#print "Window: ", window
 		#print "Percentile: ", percentile
 		#print "Place name weight:", place_name_weight
 		#print "Average Error Distance @ 1: ", (float(error_sum2)/float(total_topo))
-		for in_domain_lamb in lamb_dict_totals:
-			point_error_sum = lamb_dict_totals[in_domain_lamb]['point_error']
-			poly_error_sum = lamb_dict_totals[in_domain_lamb]['poly_error']
-			point_total_correct = lamb_dict_totals[in_domain_lamb]['point_total_correct']
-			poly_total_correct = lamb_dict_totals[in_domain_lamb]['poly_total_correct']
-			point_dist_list = lamb_dict_totals[in_domain_lamb]['point_dist_list']
-			poly_dist_list = lamb_dict_totals[in_domain_lamb]['poly_dist_list']
+		for in_domain_lamb in theta_dict_totals:
+			point_error_sum = theta_dict_totals[in_domain_lamb]['point_error']
+			poly_error_sum = theta_dict_totals[in_domain_lamb]['poly_error']
+			point_total_correct = theta_dict_totals[in_domain_lamb]['point_total_correct']
+			poly_total_correct = theta_dict_totals[in_domain_lamb]['poly_total_correct']
+			point_dist_list = theta_dict_totals[in_domain_lamb]['point_dist_list']
+			poly_dist_list = theta_dict_totals[in_domain_lamb]['poly_dist_list']
 			print "=============Vector Sum================"
 			print "Total Toponyms: ", total_topo
 			print "Window: ", window
-			print "Percentile: ", percentile
-			print "Place name weight:", place_name_weight
+			#print "Percentile: ", percentile
 			print "Point Average Error Distance @ 1: ", ((float(point_error_sum)/float(total_topo)))
 			print "Point Median Error Distance @ 1: ", point_dist_list[total_topo/2]
 			print "Point Accuracy @ 161km : ", float(point_total_correct) / float(total_topo)
@@ -506,12 +508,14 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 				w.write("=============Vector Sum================" + '\r\n')
 				w.write("In Domain Local Statistics Table Name: " + str(in_domain_stat_tbl) + '\r\n')
 				w.write("Out of domain Local Statistics Table Name: " + str(out_domain_stat_tbl) + '\r\n')
-				w.write("Test XML directory/file path: " + test_xml + '\r\n')
-				w.write("In Domain Corp Lambda: " + str(in_domain_lamb) + '\r\n')
-				w.write("Out Domain Corp Lambda: " + str(str((1.0 - float(in_domain_lamb))) + '\r\n'))
+				w.write("Test XML directory/fzile path: " + test_xml + '\r\n')
+				w.write("In Corp Lamb: " + str(in_corp_lamb) + '\r\n')
+				w.write("Theta Combination: " + str(in_domain_lamb) + '\r\n')
 				w.write("Window: " + str(window) + '\r\n')
 				w.write("Total Toponyms: " + str(total_topo) + '\r\n')
-				w.write("Place name weight:"+ str(place_name_weight) + '\r\n')
+				#w.write("Main Topo Weight:"+ str(main_topo_weight) + '\r\n')
+				#w.write("Other Topo Weight:"+ str(other_topo_weight) + '\r\n')
+				#w.write("Other Word Weight:"+ str(other_word_weight) + '\r\n')
 				w.write("Point Accuracy @ 161km : " +  str(float(point_total_correct) / float(total_topo)) + '\r\n')
 				w.write("Point Average Error Distance @ 1: " + str((float(point_error_sum)/float(total_topo))) + '\r\n')
 				w.write("Point Median Error Distance @ 1: " + str(point_dist_list[total_topo/2]) + '\r\n')
@@ -565,6 +569,55 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 	print "Total Time: ", end_time - start_time
 
+def theta_key_to_thetas(thetakey):
+	key = thetakey.split("_")
+	mt_theta = key[1]
+	ot_theta = key[3]
+	ow_theta = key[5]
+	#print mt_theta, ot_theta, ow_theta
+	return mt_theta, ot_theta, ow_theta
+
+#This function iterates though thetas assigned to 
+def getAllDicts(indomain_tab_results, outdomain_tab_results, theta_dict_totals, percentile):
+	for theta_combination in theta_dict_totals.keys():
+		#print "in_corp_lamb: ", in_corp_lamb
+		out_corp_lamb = Decimal(1.0) - Decimal(in_corp_lamb)
+		adict =  dict([(int(k), weight * (float(out_corp_lamb) * float(v))) for k, v in outdomain_tab_results])
+		adict2 =  dict([(int(k), weight * (float(in_corp_lamb) * float(v))) for k, v in indomain_tab_results])
+		#adict3 = dict([(k, v * weight) for k, v in dict(Counter(adict)+Counter(adict2)).items()])
+		#ranked_fetch = sorted(adict3.items(), key=itemgetter(1), reverse=True)
+		#subset_ranked = dict(ranked_fetch[:int(len(ranked_fetch)*percentile)])
+
+		#lamb_dict[in_corp_lamb] += (Counter(adict) + Counter(adict2))
+		lamb_dict[in_corp_lamb] = merge4([adict, adict2])
+		if weight == 40.0:
+			pass
+			#print sorted(lamb_dict[in_corp_lamb].items(), key=itemgetter(1), reverse=True)[:5]
+		#	#sys.exit()
+	return lamb_dict
+
+
+def getAllThetaDicts(main_topo_dict2, other_topo_dict2, other_word_dict2, theta_dict_totals_keys, theta_dicts):
+	main_topo_dict = merge4(main_topo_dict2)
+	other_topo_dict = merge4(other_topo_dict2)
+	other_word_dict = merge4(other_word_dict2)
+	j = 0
+	for theta_combination in theta_dict_totals_keys:
+		mt, ot, ow = theta_key_to_thetas(theta_combination)
+		j += 1
+		if j % 200 == 0:
+			print j
+		#print mt, ot, ow
+		adict1 = dict([(k, float(mt) * v) for k,v in main_topo_dict.items()])
+		adict2 = dict([(k, float(ot) * v) for k,v in other_topo_dict.items()])
+		adict3 = dict([(k, float(ow) * v) for k,v in other_word_dict.items()])
+		adict4 = merge4([adict1, adict2, adict3])
+		theta_dicts[theta_combination] = adict4
+	return theta_dicts
+
+
+
+
 def getCorrectTable(word, tab1, tab2, tab3):
 	tablelist = ['enwiki20130102_ner_final_atoi', 'enwiki20130102_ner_final_jtos', 'enwiki20130102_ner_final_ttoz', 'enwiki20130102_ner_final_other']
 	table = ""
@@ -588,18 +641,19 @@ def merge4(dicts):
 			merged[k] = merged.get(k, 0.0) + d[k]
 	return merged
 
-def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml,
- point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, geonames_tbl, point_total_correct, 
- poly_total_correct, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb):
+def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
+				percentile, window, stopwords, xml, country_tbl, region_tbl, state_tbl,
+				 geonames_tbl, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, theta_dict_totals)	:
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
 	for j in toporef:
-		#print "=======Vector Sum=============="
+		#print "=======Vector Sum============="
 		total_topo += 1
 		topobase = str(toporef[j][0])
 		print "=========="
 		print topobase
+		print total_topo
 		topotokens = []
 		contextlist = getContext(wordref, j, window, stopwords, toporef)
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
@@ -640,49 +694,68 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 		contrib_dict = {}
 
 
+		main_topo_dict = []
+		other_topo_dict = []
+		other_word_dict = []
+		theta_dicts = {}
+		#for theta_comb in theta_dict_totals:
+		#	theta_dicts[theta_comb] = {}
+
 		for word in contextlist:
 			if word[0] not in stopwords:
 				table = getCorrectTable(word[0], tab1, tab2, tab3)
 				if len(table) > 0:
-					if word[1] == "MainTopo":
-						weight = main_topo_weight
-					elif word[1] == "OtherTopo":
-						weight = other_topo_weight
-					elif word[1] == "Word":
-						weight = other_word_weight
- 					else: weight = 1.0
 					
 					SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (table, '%s')
 					cur.execute(SQL, (word[0], ))
-					adict =  dict([(int(k), weight * out_corp_lamb * float(v)) for k, v in cur.fetchall()])
+					adict =  dict([(int(k), out_corp_lamb * float(v)) for k, v in cur.fetchall()])
 					
 					if in_domain_stat_tbl != "None":
 						SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (in_domain_stat_tbl, '%s')
 						cur.execute(SQL2, (word[0], ))
-						adict2 =  dict([(int(k), weight * in_corp_lamb * float(v)) for k, v in cur.fetchall()])
+						adict2 =  dict([(int(k), in_corp_lamb * float(v)) for k, v in cur.fetchall()])
 					else: adict2 = {}
-					
-					defmergeddict = getAllDicts(indomain_tab_results, outdomain_tab_results, weight, lamb_dict, percentile)
-					#lamb_dict_list.append(defmergeddict)
 
-					#print "42031: ", lamb_dict[0.0][42031]
-					#print sorted(lamb_dict[0.0].items(), key=itemgetter(1), reverse=True)[:10]
+					adict3 = merge4([adict, adict2])
+
+					if word[1] == "MainTopo":
+						main_topo_dict.append(adict3)
+					elif word[1] == "OtherTopo":
+						other_topo_dict.append(adict3)
+					elif word[1] == "Word":
+						other_word_dict.append(adict3)
+ 					#else: weight = 1.0
 					
-					#Remove this part for efficiency, may want to return for debug
-					for idl in defmergeddict:
-						ranked_fetch = sorted(defmergeddict[idl].items(), key=itemgetter(1), reverse=True)
-						subset_ranked = dict(ranked_fetch)
-						if idl not in contrib_dict_lambs:
-							contrib_dict_lambs[idl] = {}
-						for gid in subset_ranked:
-							contrib_dict_lambs[idl].setdefault(gid, list()).append([word, subset_ranked[gid]])
-						lamb_dict_list[idl].append(defmergeddict[idl])
+		print "Starting to get all Theta Dicts"
+		start_get = datetime.datetime.now()
+		theta_dicts = getAllThetaDicts(main_topo_dict, other_topo_dict, other_word_dict, theta_dict_totals.keys(), theta_dicts)
+		#lamb_dict_list.append(defmergeddict)
+		print "Finished Getting all theta dicts"
+		print datetime.datetime.now() - start_get
+
+		#print "Stopping here"
+		#sys.exit()
+					
+		#Remove this part for efficiency, may want to return for debug
+		'''for theta_comb in theta_dicts:
+			ranked_fetch = sorted(theta_dicts[theta_comb].items(), key=itemgetter(1), reverse=True)
+			subset_ranked = dict(ranked_fetch)
+			if theta_comb not in contrib_dict_lambs:
+				contrib_dict_lambs[theta_comb] = {}
+			for gid in subset_ranked:
+				contrib_dict_lambs[theta_comb].setdefault(gid, list()).append([word, subset_ranked[gid]])
+			lamb_dict_list[idl].append(theta_dicts[theta_comb])'''
 		#print totaldict
-		for in_domain_lamb in sorted(lamb_dict.keys()):
-			start_dict_adding = datetime.datetime.now()
-			ld_reduced = reduce(updateInPlace, (Counter(x) for x in lamb_dict_list[in_domain_lamb]))
-			totaltime_dict_adding += datetime.datetime.now() - start_dict_adding
-			sorted_total = sorted(ld_reduced.items(), key=itemgetter(1), reverse=True)
+		s = 0
+		for theta_comb in theta_dicts.keys():
+			#print theta_comb
+			s += 1
+			if s % 200 == 0:
+				print s
+			#start_dict_adding = datetime.datetime.now()
+			#ld_reduced = reduce(updateInPlace, (Counter(x) for x in lamb_dict_list[in_domain_lamb]))
+			#totaltime_dict_adding += datetime.datetime.now() - start_dict_adding
+			sorted_total = sorted(theta_dicts[theta_comb].items(), key=itemgetter(1), reverse=True)
 			y = 0
 			rank_dict = {}
 			#ranked_contrib = sorted(contrib_dict.items(), key=itemgetter(1), reverse=True)
@@ -691,7 +764,8 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 				#print y
 				#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
 				#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
-				rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], sorted(contrib_dict_lambs[in_domain_lamb][t[0]], key=itemgetter(1), reverse=True)[:5], t[0]]
+				#rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], sorted(contrib_dict_lambs[in_domain_lamb][t[0]], key=itemgetter(1), reverse=True)[:5], t[0]]
+				rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]]]
 
 			#print sorted_total[:20]
 			#print dict(sorted_total)[42031]
@@ -702,8 +776,8 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 				if y == 1:
 					if topobase not in gazet_topos:
 						gazet_topos.append(topobase)
-					if toporef[j][1] not in gazet_topos:
-						gazet_topos.append(toporef[j][1])
+					if toporef[j][0] not in gazet_topos:
+						gazet_topos.append(toporef[j][0])
 					gazet_entry = GetGazets(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt)
 					poly_results = []
 					tbl = "No Tbl Match"
@@ -716,25 +790,25 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 							gid = int(gazet_entry[0][1])
 							tbl = gazet_entry[0][0]
 							name = gazet_entry[0][2]
-							SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM %s as p1, %s as p2 WHERE p1.placename = %s and p1.docid = %s and p1.wid = %s and p2.gid = %s;" % (tst_tbl, tbl, '%s', '%s', '%s', '%s')
+							SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM %s as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p1.wid = %s and p2.gid = %s;" % (tst_tbl, tbl, '%s', '%s', '%s', '%s')
 							#SQL_Poly_dist = "SELECT ST_Distance(p1.polygeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
 							#cur.execute(SQL_Point_dist, (toporef[j][0], xml, gid))
 							#point_results = cur.fetchall()
-							cur.execute(SQL_Poly_dist, (toporef[j][1], xml, wid, gid))
+							cur.execute(SQL_Poly_dist, (toporef[j][0], xml, j, gid))
 							poly_results = cur.fetchall()
 						else: 
 							print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 							#print gazet_entry
-					SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.docid = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
+					SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.docname = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
 					#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
-					cur.execute(SQL_Point_Dist, (toporef[j][1], xml, wid))
+					cur.execute(SQL_Point_Dist, (toporef[j][0], xml, j))
 					point_results = cur.fetchall()
 					#cur.execute(SQL_Poly_Dist, (toporef[j][0], xml))
 					#poly_results = cur.fetchall()
 					#print toporef[j][0]
 					#print i
 					#print xml
-					print rank_dict[i[0]]
+					#print rank_dict[i[0]]
 					#sys.exit()
 					#print rank_dict[i[0]][2][1], rank_dict[i[0]][2][0]
 
@@ -749,39 +823,39 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 						polydist = (poly_results[0][0] / float(1000))
 					else: polydist = pointdist
 
-					print "In Domain Lambda: ", in_domain_lamb
-					print "Point Dist: ", pointdist
-					print "Poly Dist: ", polydist
+					#print "Theta Comb:", theta_comb
+					#print "Point Dist: ", pointdist
+					#print "Poly Dist: ", polydist
 					#print total_topo
 
-					lamb_dict_total[in_domain_lamb].setdefault('point_dist_list', list()).append(pointdist)
+					theta_dict_totals[theta_comb].setdefault('point_dist_list', list()).append(pointdist)
 					#point_dist_list.append(pointdist)
 					#poly_dist_list.append(polydist)
-					lamb_dict_total[in_domain_lamb].setdefault('poly_dist_list', list()).append(polydist)
-					if pointdist > 1000.0:
+					theta_dict_totals[theta_comb].setdefault('poly_dist_list', list()).append(polydist)
+					#if pointdist > 1000.0:
 						#point_bigerror.append([toporef[j][1], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
-						lamb_dict_total[in_domain_lamb].setdefault('point_bigerror', list()).append([toporef[j][1], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2]])
-					if polydist > 1000.0:
-						lamb_dict_total[in_domain_lamb].setdefault('poly_bigerror', list()).append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2]])
-						#poly_bigerror.append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+					#	theta_dict_totals[in_domain_lamb].setdefault('point_bigerror', list()).append([toporef[j][1], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2]])
+					#if polydist > 1000.0:
+					#	theta_dict_totals[in_domain_lamb].setdefault('poly_bigerror', list()).append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2]])
+					#	#poly_bigerror.append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
 					if pointdist <= 161.0:
 						#point_total_correct += 1
-						lamb_dict_total[in_domain_lamb]['point_total_correct'] = lamb_dict_total[in_domain_lamb].get('point_total_correct', 0) + 1
+						theta_dict_totals[theta_comb]['point_total_correct'] = theta_dict_totals[theta_comb].get('point_total_correct', 0) + 1
 					if polydist <= 161.0:
 						#poly_total_correct += 1
-						lamb_dict_total[in_domain_lamb]['poly_total_correct'] = lamb_dict_total[in_domain_lamb].get('poly_total_correct', 0) + 1
-						print "Poly Total Correct for lambda: ", lamb_dict_total[in_domain_lamb]['poly_total_correct']
+						theta_dict_totals[theta_comb]['poly_total_correct'] = theta_dict_totals[theta_comb].get('poly_total_correct', 0) + 1
+						#print "Poly Total Correct for lambda: ", theta_dict_totals[theta_comb]['poly_total_correct']
 					#point_error += pointdist
-					lamb_dict_total[in_domain_lamb]['point_error'] = lamb_dict_total[in_domain_lamb].get('point_error', 0) + pointdist
+					theta_dict_totals[theta_comb]['point_error'] = theta_dict_totals[theta_comb].get('point_error', 0) + pointdist
 					#poly_error += polydist
-					lamb_dict_total[in_domain_lamb]['poly_error'] = lamb_dict_total[in_domain_lamb].get('poly_error', 0) + polydist
+					theta_dict_totals[theta_comb]['poly_error'] = theta_dict_totals[theta_comb].get('poly_error', 0) + polydist
 			#print "====================="
 			#print len(contextlist)
-		totaltime_gazet_query += (datetime.datetime.now() - start_gazet_query)
-		print "Time for Dict adding: ", totaltime_dict_adding
-		print "Gazet Query Time: ", totaltime_gazet_query
+		#totaltime_gazet_query += (datetime.datetime.now() - start_gazet_query)
+		#print "Time for Dict adding: ", totaltime_dict_adding
+		#print "Gazet Query Time: ", totaltime_gazet_query
 		#sys.exit()
-	return lamb_dict_total, total_topo
+	return theta_dict_totals, total_topo
 
 def flatten(l):
     for el in l:
@@ -792,6 +866,7 @@ def flatten(l):
             yield el
 
 def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt):
+	#print placenames
 	names = tuple(x for x in placenames)
 	#print names
 	gazet_entry = []
