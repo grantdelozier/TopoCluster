@@ -349,8 +349,8 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	region_tbl, state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, results_file, stan_path):
 	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
 	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
-	print "Plain Text directory path: ", test_xml
-	print "DB conneciton info: ", conn_info
+	print "Directory Path containing plain text files to be parsed: ", test_xml
+	print "DB connection info: ", conn_info
 	print "Grid table used: ", gtbl
 	print "Window size", window
 	print "Percentile: ", percentile
@@ -364,29 +364,33 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	print "Out of Domain Lambda", out_corp_lamb
 	print "In Domain Lambda", in_corp_lamb
 
+	#Test the connection to the database
 	conn = psycopg2.connect(conn_info)
 	print "Connection Success"
 
+	#These words and characters will not be evaluated or be used for Gi* vector summing
 	stopwords = set(['.',',','(',')','-', '--', u'\u2010', u'\u2011', u'\u2012', u'\u2013','=',";",':',"'",'"','$','the','a','an','that','this',
 					'to', 'be', 'have', 'has', 'is', 'are', 'was', 'am', "'s",
 					'and', 'or','but',
 					'by', 'of', 'from','in','after','on','for', 'to', 'TO',
 					'I', 'me', 'he', 'him', 'she', 'her', 'we', 'us', 'you', 'your', 'yours' 'they', 'them', 'their', 'it', 'its'])
 
-	#stopwords = set([unicode(w, 'utf-8') for w in sw])
-
+	#Initialize a cursor for DB connection
 	cur = conn.cursor()
 
+	#Intitialize a Ditionary that links GlobalGrid gid values to Latitude/Longitudes
 	lat_long_lookup = {}
 	SQL2 = "SELECT gid, ST_Y(geog::geometry), ST_X(geog::geometry) from %s ;" % gtbl
 	cur.execute(SQL2)
 	lat_long_lookup = dict([(g[0], [g[1],g[2]]) for g in cur.fetchall()])
-	print len(lat_long_lookup)
+	#print len(lat_long_lookup)
+
 	point_total_correct = 0
 	poly_total_correct = 0
 
 	start_time = datetime.datetime.now()
 
+	#Test xml should always be a directory name. System currently only supports directory as an argument, though may change in the future.
 	if os.path.isdir(test_xml) == True:
 		print "Reading as directory"
 		files = os.listdir(test_xml)
@@ -401,6 +405,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		poly_dist = 0.0
 		m = 0
 
+		#These queries are designed to pull all the alternate names from the geonames, country, state, and region tables. Alternate names are used in later steps to enhance gazetteer matching
 		SQL1 = "SELECT p1.gid, p1.name, p1.name_long, p1.geonames_gid, p1.altnames FROM %s as p1 ;" % country_tbl
 		SQl2 = "SELECT p1.gid, p1.name, p1.name_long, p1.geonames_gid, p1.altnames FROM %s as p1 ;" % region_tbl
 		SQL3 = "SELECT p1.gid, p1.name, p1.geonames_gid, p1.altnames FROM %s as p1 ;" % state_tbl
@@ -457,14 +462,18 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Done Creating Alt Names"
 		print "Length of PPL AltNames: ", len(pplc_alt)
 
+		#Import script that issues commands to Stanford NER
 		import NERTest as NER
 		predictions = []
 
+		#Loop through every plaintext file in directory
 		for plaintext in files:
 			m += 1
 			print plaintext
+			#Change this... it will break on non unix systems
 			filename = test_xml+'/'+plaintext
 			outxml = "neroutputs/ner_" + plaintext
+			#Catch errors from the Stanford NER. Doesn't always succeed in parsing files. 
 			try: 
 				NER.calc(stan_path, filename, outxml)
 				toporef, wordref = NER.readnerxml(outxml)
@@ -476,17 +485,13 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 			print "Files left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
-			#wordref, toporef = parse_xml(test_xml+'/'+xml)
+			#Vector Sum Function (Performs actual Disambiguation)
+			#wordref = other words dictionary with key = token index : value = word (at this point)
+			#toporef = toponym dictionary with key = token index : value = word (at this point)
+			#total_topo = total number of toponyms currently georeferenced
 			predictions, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
 				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, plaintext, predictions, country_tbl, region_tbl, state_tbl,
 				 geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb)
-			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
-		#print "============Most Overlap==============="
-		#print "Total Toponyms: ", total_topo
-		#print "Window: ", window
-		#print "Percentile: ", percentile
-		#print "Place name weight:", place_name_weight
-		#print "Average Error Distance @ 1: ", (float(error_sum2)/float(total_topo))
 
 		print "=============Vector Sum================"
 		print "Total Toponyms: ", total_topo
@@ -495,6 +500,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Main Topo weight:", main_topo_weight
 		print "Other Topo weight:", other_topo_weight
 		print "Other word weight:", other_word_weight
+		#Write all toponym resolution results to results file
 		with io.open(results_file, 'w', encoding='utf-8') as w:
 			w.write(u"=============TopoCluster Run Settings================" + '\r\n')
 			w.write(u"In Domain Local Statistics Table Name: " + unicode(in_domain_stat_tbl) + '\r\n')
@@ -510,11 +516,13 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			w.write(u"=====================================================" + '\r\n')
 			w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long\r\n")
 			for p in predictions:
+				#The encoding of the toponym can change based on the document being read
 				if isinstance(p[0], str):
 					toponym = p[0].decode('utf-8')
 				if isinstance(p[0], unicode):
 					toponym = p[0].encode('utf-8').decode('utf-8')
 				print p[1]
+				#The encoding of the toponym name from the table can change based on the table results were pulled from
 				if isinstance(p[6], str):
 					table_toponym = p[6].decode('utf-8')
 				if isinstance(p[6], unicode):
@@ -526,6 +534,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 	print "Total Time: ", end_time - start_time
 
+#This function evaluates a word to see which out of domain table should be queries to obtain the Gi* vector
 def getCorrectTable(word, tab1, tab2, tab3):
 	tablelist = ['enwiki20130102_ner_final_atoi', 'enwiki20130102_ner_final_jtos', 'enwiki20130102_ner_final_ttoz', 'enwiki20130102_ner_final_other']
 	table = ""
@@ -540,8 +549,9 @@ def getCorrectTable(word, tab1, tab2, tab3):
 			table = 'enwiki20130102_ner_final_other'
 	return table
 
-from collections import defaultdict
+#from collections import defaultdict
 
+#Merge a list of Gi* dictionaries stogether, summing values
 def merge4(dicts):
 	merged = {}
 	for d in dicts:
@@ -549,12 +559,16 @@ def merge4(dicts):
 			merged[k] = merged.get(k, 0.0) + d[k]
 	return merged
 
+#Performs actual disambiguation work based on summing Gi* vectors of words in a context window
 def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, 
 	other_word_weight, plaintext_file, predictions, country_tbl, region_tbl, state_tbl,
 	geonames_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb):
+	
+	#Lists of alphabetic characters that help system decide which table partition to query in later steps
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
+	#Loop through all toponyms found in document
 	for j in toporef:
 		#print "=======Vector Sum=============="
 		total_topo += 1
@@ -562,47 +576,38 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		print "=========="
 		print topobase
 		topotokens = []
+		#Get all words in a context window around the toponym's index
 		contextlist = getContext(wordref, j, window, stopwords, toporef)
+		
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
 		if topobase.title() != topobase and (len(toporef[j]) != 2 and len(toporef[j]) != 3):
 			#contextlist.append(topobase.title())
 			contextlist.append([topobase.title(), "MainTopo", 0])
-			#topotokens.append(toporef[j][0].title())
 			topobase = topobase.title()
-			#print contextlist
-			#print "Inside title case changer"
-			#print topobase
+
 		#Change acronyms with periods into regular acronyms
 		if "." in topobase and ". " not in topobase.strip():
 			combinedtokens = ""
 			for token in topobase.split("."):
 				combinedtokens = combinedtokens + token
-				#topotokens.append(token)
-				#contextlist.append(token)
-			#topotokens.append(topobase.replace('.', ''))
 			topotokens.append(combinedtokens)
-			#contextlist.append(combinedtokens)
 			contextlist.append([combinedtokens, "MainTopo", 0])
+
 		else: topotokens.append(topobase)
 		gazet_topos = topotokens
 		if " " in topobase:
 			topotokens.append(topobase.replace(" ", '|'))
 			#contextlist.append(topobase.replace(" ", '|'))
 			contextlist.append([topobase.replace(" ", '|'), "MainTopo", 0])
-			#for token in topobase.split(" "):
-			#	topotokens.append(token)
-			#	contextlist.append(token)
-		#print toporef[j]
-		#gold_lat = float(toporef[j][1]['lat'])
-		#gold_long = float(toporef[j][1]['long'])
 		
-		#print contextlist
 		totaldict = Counter()
 		contrib_dict = {}
 		for word in contextlist:
 			if word[0] not in stopwords:
+				#Returns one of four table names pertaining to the correct GeoWikipedia Gi* Stat Table Partition
 				table = getCorrectTable(word[0], tab1, tab2, tab3)
 				if len(table) > 0:
+					#Apply different weights to the Gi* vectors of different types of words
 					if word[1] == "MainTopo":
 						weight = main_topo_weight
 					elif word[1] == "OtherTopo":
@@ -611,11 +616,14 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 						weight = other_word_weight
  					else: weight = 1.0
 					
+					#Query the out of domain Gi* table for statistic values
 					SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (table, '%s')
 					cur.execute(SQL, (word[0], ))
 					adict =  dict([(int(k), weight * out_corp_lamb * float(v)) for k, v in cur.fetchall()])
 					
+
 					if in_domain_stat_tbl != "None":
+						#Query the in domain Gi* table for statistic values
 						SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (in_domain_stat_tbl, '%s')
 						cur.execute(SQL2, (word[0], ))
 						adict2 =  dict([(int(k), weight * in_corp_lamb * float(v)) for k, v in cur.fetchall()])
@@ -666,25 +674,11 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 						centroid_lat = gazet_entry[0][3]
 						centroid_long = gazet_entry[0][4]
 						predictions.append([toporef[j], plaintext_file, j, "GAZET", tbl, gid, name, centroid_lat, centroid_long ] )
-						#SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM %s as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p1.wid = %s and p2.gid = %s;" % (tst_tbl, tbl, '%s', '%s', '%s', '%s')
-						#SQL_Poly_dist = "SELECT ST_Distance(p1.polygeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
-						#cur.execute(SQL_Point_dist, (toporef[j][0], xml, gid))
-						#point_results = cur.fetchall()
-						#cur.execute(SQL_Poly_dist, (toporef[j][0], xml, j, gid))
-						#poly_results = cur.fetchall()
 					else: 
 						print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 						#print gazet_entry
 				else:
 					predictions.append([toporef[j], plaintext_file, j, "TOPO_ESTIMATE", tbl, i[0], toporef[j], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1] ] )
-				#SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.docname = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
-				#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
-				#cur.execute(SQL_Point_Dist, (toporef[j][0], xml, j))
-				#point_results = cur.fetchall()
-				#cur.execute(SQL_Poly_Dist, (toporef[j][0], xml))
-				#poly_results = cur.fetchall()
-				#print toporef[j][0]
-				#print xml
 				print rank_dict[i[0]]
 				print predictions[-1]
 
