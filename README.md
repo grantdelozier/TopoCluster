@@ -182,29 +182,12 @@ Argument Explanation:
 * -out_tbl (table to which local statistic results will be written to. If a table already exists then it will have its previous contents deleted prior to insertion. Right now there is a limit to the character length of words that can be inserted (50 charvar).)
 * -cores (the number of cores to utilize for local statistic calculations. The local statistic calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus. It is recommended to leave 1/2 the number of cores open so that they can be devoted to postgreSQL processes that will be spawned.)
 
-### Resolve Toponyms
+### Resolve Toponyms (Plain Text with NER)
 
-This mode disambiguates place names and then evaluates disambiguations against the TR-ConLL test set.
+This mode will Stanford NER parse all plain text files in a directory and perform a disambiguation based on Gi* Vectors derived from the GeoWikipedia Corpus.
 
-This mode additionally requires the use of gazetteers downloaded from http://www.naturalearthdata.com/downloads/ The disambiguator is capable of using country, region, state, and city shapefiles downloaded from the website. These files should be loaded into the PostgreSQL DB before running.
-
-(Remove returns between arguments)
+Example command:
 ```
-python TopoCluster.py 
--mode topo_test
--tstf /home/dir/trconllf/xml/test
--stat_tbl wikipedia_training_epanech100km_gi
--gtbl globalgrid_5_clip
--conn "dbname=mydbname user=myusername host='localhost' password=' '"
--percentile .25 
--window 15 
--place_name_weight 50.0 
--country_tbl countries_2010 
--region_tbl wrldregions
--state_tbl us_states_2010 
--us_prom_tbl us_prominentplace
--world_prom_tbl worldcities
+python TopoCluster.py -mode plain_topo_resolve -outdomain_stat_tbl enwiki20130102_train_kernel100k_grid5_epanech_allwords_ner_fina -tstf /home/yourUser/plaintextfiles -conn "dbname=mydbname user=myusername host='localhost' password=' '" -gtbl globalgrid_5_clip_geog -percentile 1.0 -window 15 -main_topo_weight 40.0 -other_topo_weight 5.0 -other_word_weight 1.0 -country_tbl countries_2012 -region_tbl regions_2012 -state_tbl states_2012 -geonames_tbl geonames_all -out_domain_lambda 1.0 -stan_path /home/yourUser/etc/TopoCluster/stanford-ner-path-containing-jar -results_file /home/yourUser/plaintextfiles_results.txt
 ```
-
-
 
