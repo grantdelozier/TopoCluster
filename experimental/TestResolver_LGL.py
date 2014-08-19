@@ -419,7 +419,7 @@ def updateInPlace(a,b):
              state_tbl, geonames_tbl, tst_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
 
 def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight,
- country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, in_domain_lambda, out_domain_lambda, results_file):
+ country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file):
 	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
 	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
 	print "Test XML directory/file path: ", test_xml
