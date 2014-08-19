@@ -5,26 +5,27 @@ PROJECT_ROOT = os.path.dirname(__file__)
 sys.path.append(os.path.join(PROJECT_ROOT,"scripts"))
 
 
-if len(sys.argv) >= 3:
+if len(sys.argv) >= 3 and "--help" not in sys.argv:
     print sys.argv
     args = sys.argv
 
     mode_arg = args[args.index("-mode")+1]
     print mode_arg
 
-    ####################Prepare a Table for visualization###############
+    ####################Prepare a Table for visualization in a GIS###############
     if mode_arg.lower() == "prep_vis":
         import Visualize_Simple as Viz
 
         #Comma delimited listing of words to add together for Viz output
+        #Example: -words Washington,Seahawks
         try:
             words = args[args.index('-words')+1]
         except: 
             print "You did not provide any words to visualize"
             sys.exit("Error")
 
-
         #Pointgrid table name
+        #Example: globalgrid_5_clip_geog
         try:
             gtbl = args[args.index('-gtbl')+1]
         except:
@@ -270,11 +271,28 @@ if len(sys.argv) >= 3:
         JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
    ###################Test Toponym Resolver#####################
+   #Only used to test annotated datasets of TRCONLL, LGL, CWar
     if mode_arg.lower() == "topo_test":
-        import TestResolver_TRCONLL as tstr
+
+        #The domain of texts that will be tested
+        #
+        try:
+            which_test = args[args.index("-test_domain")+1]
+
+            if which_test.strip().lower() == "lgl":
+                import TestResolver_LGL as tstr
+            if which_test.strip().lower() == "trconll":
+                import TestResolver_TRCONLL as tstr
+            if which_test.strip().lower() == "cwar":
+                import TestResolver_CWar as tstr
+        except:
+            print "-mode topo_test requires you to specify an addition -test_domain argument"
+            print "current options allow for -test_domain <lgl, trconll, cwar>"
+            print sys.exit("Error: exiting. See above")
+        
         #print "Starting test of topo resolver on TRConll"
 
-        #Statistics Table (Zavg/Gi*)
+        #Statistics Table (Zavg/Gi*) for in domain statistics
         try:
             in_domain_stat_tbl = args[args.index("-indomain_stat_tbl")+1]
         except:
@@ -283,6 +301,7 @@ if len(sys.argv) >= 3:
             in_domain_stat_tbl = "None"
             #sys.exit("Error")
 
+        #Statistics Table (Zavg/Gi*) for out of domain statistics
         try:
             out_domain_stat_tbl = args[args.index("-outdomain_stat_tbl")+1]
         except:
@@ -429,9 +448,14 @@ if len(sys.argv) >= 3:
             print "You did not provide a results file name, defaulting to TestResults.txt"
             results_file = "TestResults.txt"
 
-        tstr.calc(in_domain_stat_tbl, out_domain_stat_tbl , f, conn_info, gtbl, window, percentile, float(main_topo_weight), float(other_topo_weight), float(other_word_weight), country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
+        tstr.calc(in_domain_stat_tbl, out_domain_stat_tbl , f, conn_info, gtbl, window, percentile, 
+            float(main_topo_weight), float(other_topo_weight), float(other_word_weight), country_tbl, region_tbl,
+             state_tbl, geonames_tbl, tst_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
 
-    ###################Test Toponym Resolver Using NER#####################
+    ####################################################################################################################################
+    ###################Test Toponym Resolver Using NER##################################################################################
+    ####################################################################################################################################
+
     if mode_arg.lower() == "topo_test_ner":
         import TestResolverV4_NER as tstr
         print "Starting test of topo resolver on TRConll"
@@ -844,16 +868,13 @@ if len(sys.argv) >= 3:
             cores = 1
 
         morans.calc(f, dtbl, gtbl, conn, outf, agg_dist, kern_dist, traintype.lower(), write_agg_lm, use_agg_lm, write_agg_file, sig_test, neighbor_ref_file, mean_method, int(grid_min), iterations, cores)
-
-
-    if "--help" in args:
-        print "TopoCluster Run Modes:"
-        print "-mode loadDB"
-        print "-mode calc_morans"
-        print ""
-        print "======================"
-        print "=======Example========"
-        print "======================"
-        print "python TopoCluster.py -mode loadDB -tf /directory/trainfile.txt -dtbl document_table -conn \"dbname=someDB user=userID host='localhost'\" "
-        
-    
+else:
+    print "TopoCluster Run Modes:"
+    print "-mode loadDB"
+    print "-mode calc_morans"
+    print "-mode plain_topo_resolve"
+    print "-mode topo_test"
+    print "-mode topo_test_ner"
+    print "-mode local_stats"
+    print "========================"
+    print "Please visit https://github.com/grantdelozier/TopoCluster/blob/master/README.md for more information"  

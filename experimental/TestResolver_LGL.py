@@ -354,30 +354,33 @@ def Between(start_span, se_pairs):
 			return t
 	return "-99"
 
-def getContext(wordref, i, window, stopwords):
+def getContext(wordref, i, window, stopwords, toporef):
 	j = i
-	#print j
-	#print sorted(wordref.keys(), reverse=False)[:5]
-	#print wordref[j]
-	contextlist = [wordref[j][2]]
+	contextlist = [[wordref[j], "MainTopo", (i-j)]]
 	while j > 1:
 		j = j - 1
 		if i - window >= j:
 			break
-		if wordref[j][2] not in stopwords:
+		if j in toporef:
+			if " " in wordref[j]:
+				contextlist.append([wordref[j].strip().replace(" ", "|"), "OtherTopo", (i-j)])
+			else:
+				contextlist.append([wordref[j], "OtherTopo", (i-j)])
+		elif wordref[j] not in stopwords:
 			try:
 				#u1 = unicode(wordref[j], 'utf-8')
-				if len(wordref[j][2]) == 1 and block(wordref[j][2]) == "General Punctuation":
+				if len(wordref[j]) == 1 and block(wordref[j]) == "General Punctuation":
 					pass
 					#print "~~~~Forbidden Character~~~~"
 					#print wordref[j]
 					#print "~~~~~~~~~~~~~~~~~~~~~"
 					#sys.exit()
 				else:
-					contextlist.append(wordref[j][2])
+					contextlist.append([wordref[j], "Word", (i-j)])
 			except: 
-				print "~~~~Broken String~~~~"
-				print wordref[j][2]
+				#print "~~~~Broken String~~~~"
+				#print wordref[j]
+				pass
 			#	print "~~~~~~~~~~~~~~~~~~~~~"
 	#print len(contextlist)
 	j = i
@@ -385,19 +388,25 @@ def getContext(wordref, i, window, stopwords):
 		j = j + 1
 		if i + window < j:
 			break
-		if wordref[j][2] not in stopwords:
+		if j in toporef:
+			if " " in wordref[j]:
+				contextlist.append([wordref[j].strip().replace(" ", "|"), "OtherTopo", (i-j)])
+			else:
+				contextlist.append([wordref[j], "OtherTopo", (i-j)])
+		elif wordref[j] not in stopwords:
 			try:
-				if len(wordref[j][2]) == 1 and block(wordref[j][2]) == "General Punctuation":
+				if len(wordref[j]) == 1 and block(wordref[j]) == "General Punctuation":
 					pass
 					#print "~~~~Forbidden Character~~~~"
 					#print wordref[j]
 					#print "~~~~~~~~~~~~~~~~~~~~~"
 					#sys.exit()
 				else:
-					contextlist.append(wordref[j][2])
-			except: 
-				print "~~~~Broken String~~~~"
-				print wordref[j][2]
+					contextlist.append([wordref[j], "Word", (i-j)])
+			except:
+				pass 
+				#print "~~~~Broken String~~~~"
+				#print wordref[j]
 			#	print "~~~~~~~~~~~~~~~~~~~~~"
 	return contextlist
 
@@ -405,23 +414,33 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
-def calc(stat_tbl, test_xml, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl):
-	print "Local Statistics Table Name: ", stat_tbl
+(in_domain_stat_tbl, out_domain_stat_tbl , f, conn_info, gtbl, window, percentile, 
+            float(main_topo_weight), float(other_topo_weight), float(other_word_weight), country_tbl, region_tbl,
+             state_tbl, geonames_tbl, tst_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
+
+def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight,
+ country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, in_domain_lambda, out_domain_lambda, results_file):
+	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
+	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
 	print "Test XML directory/file path: ", test_xml
 	print "DB conneciton info: ", conn_info
 	print "Grid table used: ", gtbl
 	print "Window size", window
 	print "Percentile: ", percentile
-	print "Place name weight: ", place_name_weight
+	print "Main Toponym weight: ", main_topo_weight
+	print "Other Toponym weight: ", other_topo_weight
+	print "Other Word weight: ", other_word_weight
 
 	print "Country table name: ", country_tbl
 	print "Region table name: ", region_tbl
 	print "State table name: ", state_tbl
+	print "Out of Domain Lambda", out_corp_lamb
+	print "In Domain Lambda", in_corp_lamb
 
 	print "Test table name:", tst_tbl
 
 	conn = psycopg2.connect(conn_info)
-	print "Connection Success"
+	print "DB Connection Success"
 
 	stopwords = set(['.',',','(',')','-', '--', u'\u2010', u'\u2011', u'\u2012', u'\u2013','=',";",':',"'",'"','$','the','a','an','that','this',
 					'to', 'be', 'have', 'has', 'is', 'are', 'was', 'am', "'s",
