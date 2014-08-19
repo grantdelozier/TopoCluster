@@ -1,4 +1,9 @@
 import sys
+import os
+
+PROJECT_ROOT = os.path.dirname(__file__)
+sys.path.append(os.path.join(PROJECT_ROOT,"scripts"))
+
 
 if len(sys.argv) >= 3:
     print sys.argv
