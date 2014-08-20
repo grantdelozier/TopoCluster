@@ -514,6 +514,9 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 		total_results = {}
 
+		total_results['poly_total_correct'] = 0
+		total_results['point_total_correct'] = 0
+
 		for xml in files:
 			m += 1
 			print xml
