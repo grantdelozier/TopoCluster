@@ -252,64 +252,48 @@ F0000..FFFFF; Supplementary Private Use Area-A
 # EOF
 ''')
 
-def parse_xml(afile):
-	#print afile
+#Use with classic xml
+def parse_xml2(afile):
 	xmldoc = ET.parse(file(afile))
 	root = xmldoc.getroot()
-
+	#parser = etree.XMLParser(ns_clean=True, recover=True, encoding='latin1')
+	#xmldoc = ET.parse(file(afile), parser)
+	#root = xmldoc.getroot()
 
 	wordref = {}
 	toporef = {}
 	i = 0
 	sid = 0
 	
-	sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
-
 	#print root.tag
 	#print root.attrib
-	start_end = {}
-	for child in root.iter('articles'):
-		#print child.attrib
-		#sid = child.attrib['id']
-		#sid += 1
-		#print sid
-		for article in child:
-			did = article.attrib['docid']
-			#print did
-			for item in article:
-				if item.tag == 'title':
-					art_title = item.text
-					#print art_title 
-				if item.tag == 'domain':
-					art_domain = item.text
-					#print art_domain
-				if item.tag == 'text':
-					art_text = item.text
-				toporefs = []
-				if item.tag == 'toponyms':
-					for topo in item:
-						for t in topo.iter('toponym'):
-							#i+= 1
-							for item2 in t:
-								if item2.tag == 'start':
-									start = item2.text
-								if item2.tag == 'end':
-									end = item2.text
-								if item2.tag == 'phrase':
-									phrase = item2.text
-								if item2.tag == 'gaztag':
-									for item3 in item2:
-										if item3.tag == 'lat':
-											lat = item3.text
-										if item3.tag == 'lon':
-											lon = item3.text
-									toporefs.append([did, art_title, art_domain, start, end, phrase, lat, lon])
-									#print toporefs[-1]
-					#sys.exit()
-			wordref, i, toporef = getContext2(art_text, wordref, i, toporefs, toporef, sent_detector)
-
-
-	return toporef, wordref
+	for child in root.iter('doc'):
+		did = child.attrib['id']
+		sid = 0
+		for c in child:
+			#print child.attrib
+			#sid = child.attrib['id']
+			sid += 1
+			wid = 0
+			#print sid
+			for sub in c:
+				#print sub.tag, sub.attrib
+				if sub.tag == "w" and len(sub.attrib['tok']) > 0:
+					i += 1
+					#print sub.attrib['tok']
+					wordref[i] = sub.attrib['tok']
+					wid += 1
+				elif sub.tag == "toponym":
+					i += 1
+					#print sub.attrib['term']
+					wordref[i] = sub.attrib['term']
+					wid += 1
+					for sub2 in sub:
+						for sub3 in sub2:
+							if "selected" in sub3.attrib:
+								#print sub3.attrib
+								toporef[i] = [wordref[i], sub3.attrib, did, wid]
+	return wordref, toporef
 
 def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector):
 	span = 0
@@ -413,10 +397,6 @@ def getContext(wordref, i, window, stopwords, toporef):
 def updateInPlace(a,b):
 	a.update(b)
 	return a
-
-(in_domain_stat_tbl, out_domain_stat_tbl , f, conn_info, gtbl, window, percentile, 
-            float(main_topo_weight), float(other_topo_weight), float(other_word_weight), country_tbl, region_tbl,
-             state_tbl, geonames_tbl, tst_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
 
 def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight,
  country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file):
@@ -532,82 +512,55 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Done Creating Alt Names"
 		print "Length of PPL AltNames: ", len(pplc_alt)
 
+		total_results = {}
+
 		for xml in files:
 			m += 1
 			print xml
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
-			toporef, wordref = parse_xml(test_xml+'/'+xml)
-			point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, stat_tbl, 
-				percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl,
-				 geonames_tbl, point_total_correct, poly_total_correct, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt)
-			#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml)
-		point_dist_list.sort()
-		poly_dist_list.sort()
-		#print "============Most Overlap==============="
-		#print "Total Toponyms: ", total_topo
-		#print "Window: ", window
-		#print "Percentile: ", percentile
-		#print "Place name weight:", place_name_weight
-		#print "Average Error Distance @ 1: ", (float(error_sum2)/float(total_topo))
-		for thing in point_bigerror:
-			print "Point Big Errors"
-			print thing
-		for thing in poly_bigerror:
-			print "Poly Big Errors"
-			print thing
-		print "=============Vector Sum================"
-		print "Total Toponyms: ", total_topo
-		print "Window: ", window
-		print "Percentile: ", percentile
-		print "Place name weight:", place_name_weight
-		print "Point Average Error Distance @ 1: ", ((float(point_error_sum)/float(total_topo)))
-		print "Point Median Error Distance @ 1: ", point_dist_list[total_topo/2]
-		print "Point Accuracy @ 161km : ", float(point_total_correct) / float(total_topo)
-		print "Polygon Average Error Distance @ 1: ", ((float(poly_error_sum)/float(total_topo)))
-		print "Polygon Median Error Distance @ 1: ", poly_dist_list[total_topo/2]
-		print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
-		conn.close()
-	elif os.path.isdir(test_xml) == False:
-		print "Reading as file"
-		wordref, toporef = parse_xml(test_xml)
-		simplefile = test_xml[test_xml.rfind('/')+1:]
-		point_bigerror = []
-		poly_bigerror = []
-		point_dist_list = []
-		poly_dist_list = []
-		total_topo = 0
-		point_error_sum = 0.0
-		poly_error_sum = 0.0
-		error_sum2 = 0.0
-		point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup, 
-			stat_tbl, percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list)
-		point_dist_list.sort()
-		poly_dist_list.sort()
-		#error_sum2 = MostOverlap(wordref, toporef, error_sum2, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, simplefile)
-		#print "============Most Overlap==============="
-		#print "Total Toponyms: ", total_topo
-		#print "Window: ", window
-		#print "Percentile: ", percentile
-		#print "Place name weight:", place_name_weight
-		#print "Average Error Distance @ 1: ", ((float(error_sum2)/float(total_topo)))
-		for thing in point_bigerror:
-			print "Point Big Errors"
-			print thing
-		for thing in poly_bigerror:
-			print "Poly Big Errors"
-			print thing
-		print "=============Vector Sum================"
-		print "Total Toponyms: ", total_topo
-		print "Window: ", window
-		print "Percentile: ", percentile
-		print "Place name weight:", place_name_weight
-		print "Point Average Error Distance @ 1: ", ((float(point_error_sum)/float(total_topo)))
-		print "Point Median Error Distance @ 1: ", point_dist_list[total_topo/2]
-		print "Polygon Average Error Distance @ 1: ", ((float(poly_error_sum)/float(total_topo)))
-		print "Polygon Median Error Distance @ 1: ", poly_dist_list[total_topo/2]
-		conn.close()
+			wordref, toporef = parse_xml2(test_xml+'/'+xml)
+			total_results, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
+				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml, country_tbl, region_tbl, state_tbl,
+				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, total_results)
 
+		point_error_sum = total_results['point_error']
+		poly_error_sum = total_results['poly_error']
+		point_total_correct = total_results['point_total_correct']
+		poly_total_correct = total_results['poly_total_correct']
+		point_dist_list = total_results['point_dist_list'].sort()
+		poly_dist_list = total_results['poly_dist_list'].sort()
+		print "=============Vector Sum================"
+		print "Total Toponyms: ", total_topo
+		print "Window: ", window
+		print "Percentile: ", percentile
+		print "Main Topo weight:", main_topo_weight
+		print "Other Topo weight:", other_topo_weight
+		print "Other Word weight:", other_word_weight
+		print "Point Average Error Distance: ", ((float(point_error_sum)/float(total_topo)))
+		print "Point Median Error Distance: ", point_dist_list[total_topo/2]
+		print "Point Accuracy @ 161km : ", float(point_total_correct) / float(total_topo)
+		print "Polygon Average Error Distance: ", ((float(poly_error_sum)/float(total_topo)))
+		print "Polygon Median Error Distance: ", poly_dist_list[total_topo/2]
+		print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
+		with open(results_file, 'a') as w:
+			w.write("=============Vector Sum================" + '\r\n')
+			w.write("In Domain Local Statistics Table Name: " + str(in_domain_stat_tbl) + '\r\n')
+			w.write("Out of domain Local Statistics Table Name: " + str(out_domain_stat_tbl) + '\r\n')
+			w.write("Test XML directory/file path: " + test_xml + '\r\n')
+			w.write("In Corp Lamb: " + str(in_corp_lamb) + '\r\n')
+			w.write("Out Corp Lamb: " + str(out_corp+lamb) + '\r\n')
+			w.write("Window: " + str(window) + '\r\n')
+			w.write("Total Toponyms: " + str(total_topo) + '\r\n')
+			w.write("Main Topo Weight:"+ str(main_topo_weight) + '\r\n')
+			w.write("Other Topo Weight:"+ str(other_topo_weight) + '\r\n')
+			w.write("Other Word Weight:"+ str(other_word_weight) + '\r\n')
+			w.write("Point Accuracy @ 161km : " +  str(float(point_total_correct) / float(total_topo)) + '\r\n')
+			w.write("Point Average Error Distance: " + str((float(point_error_sum)/float(total_topo))) + '\r\n')
+			w.write("Point Median Error Distance: " + str(point_dist_list[total_topo/2]) + '\r\n')
+			w.write("Polygon Average Error Distance " + str((float(poly_error_sum)/float(total_topo))) + '\r\n')
+			w.write("Polygon Median Error Distance: " + str(poly_dist_list[total_topo/2]) + '\r\n' )
+			w.write("Polygon Accuracy @ 161km : " + str(float(poly_total_correct) / float(total_topo)) + '\r\n' )
 	end_time = datetime.datetime.now()
 
 	print "Total Time: ", end_time - start_time
@@ -626,10 +579,15 @@ def getCorrectTable(word, tab1, tab2, tab3):
 			table = 'enwiki20130102_ner_final_other'
 	return table
 
+def merge4(dicts):
+	merged = {}
+	for d in dicts:
+		for k in d:
+			merged[k] = merged.get(k, 0.0) + d[k]
+	return merged
 
-def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_long_lookup, stat_tbl, percentile, window, stopwords, place_name_weight, xml,
- point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl, geonames_tbl, point_total_correct, 
- poly_total_correct, tst_tbl, country_alt, region_alt, state_alt, pplc_alt):
+def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml,
+ country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, total_results):
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
@@ -637,15 +595,18 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 		print "=======Vector Sum=============="
 		if total_topo > 0:
 			print "Total Topo:", total_topo
-			print "Poly Total Acc @ 161: ", float(poly_total_correct)/float(total_topo)
-			print "Mean Error Poly: ", float(poly_error)/float(total_topo)
-			print "Point Total Acc @ 161: ", float(point_total_correct)/float(total_topo)
-			print "Mean Error Point: ", float(point_error)/float(total_topo)
+			print "Poly Total Acc @ 161: ", float(total_results['poly_total_correct'])/float(total_topo)
+			print "Mean Error Poly: ", float(total_results['poly_error'])/float(total_topo)
+			print "Point Total Acc @ 161: ", float(total_results['point_total_correct'])/float(total_topo)
+			print "Mean Error Point: ", float(total_results['point_error'])/float(total_topo)
+			print "=============================="
 		total_topo += 1
 		topobase = str(toporef[j][0])
 		print topobase
+		xml = toporef[j][2]
+		wid = toporef[j][3]
 		topotokens = []
-		contextlist = getContext(wordref, j, window, stopwords)
+		contextlist = getContext(wordref, j, window, stopwords, toporef)
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
 		if topobase.title() != topobase and (len(toporef[j][0]) != 2 and len(toporef[j][0]) != 3):
 			contextlist.append(topobase.title())
@@ -674,29 +635,36 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 			#	contextlist.append(token)
 		print toporef[j]
 		gold_lat = float(toporef[j][1]['lat'])
-		gold_long = float(toporef[j][1]['lon'])
+		gold_long = float(toporef[j][1]['long'])
 		
 		#print contextlist
 		totaldict = Counter()
 		contrib_dict = {} 
 		for word in contextlist:
-			if word not in stopwords:
-				table = getCorrectTable(word, tab1, tab2, tab3)
-				table2 = "lgl_dev_kernel100k_epanech_gi"
-				lambda1 = .25
-				lambda3 = .75
+			if word[0] not in stopwords:
+				table = getCorrectTable(word[0], tab1, tab2, tab3)
+				table2 = in_domain_stat_tbl
 				if len(table) > 0:
-					#print word, ":", table
+
+					if word[1] == "MainTopo":
+						weight = main_topo_weight
+					elif word[1] == "OtherTopo":
+						weight = other_topo_weight
+					elif word[1] == "Word":
+						weight = other_word_weight
+ 					else: weight = 0.5
+
 					SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (table, '%s')
-					SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (table2, '%s')
-					cur.execute(SQL, (word, ))
-					if word in topotokens:
-						weight = place_name_weight
-					else: weight = 1.0
-					adict =  dict([(int(k), lambda1 * float(v)) for k, v in cur.fetchall()])
-					cur.execute(SQL2, (word, ))
-					adict2 =  dict([(int(k), lambda3 * float(v)) for k, v in cur.fetchall()])
-					adict3 = dict([(k, v * weight) for k, v in dict(Counter(adict)+Counter(adict2)).items()])
+					cur.execute(SQL, (word[0], ))
+					adict =  dict([(int(k), weight * out_corp_lamb * float(v)) for k, v in cur.fetchall()])
+					
+					if in_domain_stat_tbl != "None":
+						SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (in_domain_stat_tbl, '%s')
+						cur.execute(SQL2, (word[0], ))
+						adict2 =  dict([(int(k), weight * in_corp_lamb * float(v)) for k, v in cur.fetchall()])
+					else: adict2 = {}
+
+					adict3 = merge4([adict, adict2])
 					#Get Ranked List of gid's sorting by value
 					ranked_fetch = sorted(adict3.items(), key=itemgetter(1), reverse=True)
 					#Cut off the bottom percentile (optional)
@@ -741,28 +709,19 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 						gid = int(gazet_entry[0][1])
 						tbl = gazet_entry[0][0]
 						name = gazet_entry[0][2]
-						SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM %s as p1, %s as p2 WHERE p1.placename = %s and p1.did = %s and p1.wid = %s and p2.gid = %s;" % (tst_tbl, tbl, '%s', '%s', '%s', '%s')
+						SQL_Poly_dist = "SELECT ST_Distance(p1.pointgeog, p2.geog) FROM %s as p1, %s as p2 WHERE p1.placename = %s and p1.docid = %s and p1.wid = %s and p2.gid = %s;" % (tst_tbl, tbl, '%s', '%s', '%s', '%s')
 						#SQL_Poly_dist = "SELECT ST_Distance(p1.polygeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
 						#cur.execute(SQL_Point_dist, (toporef[j][0], xml, gid))
 						#point_results = cur.fetchall()
-						cur.execute(SQL_Poly_dist, (toporef[j][0], toporef[j][1]['did'], toporef[j][1]['start'], gid))
+						cur.execute(SQL_Poly_dist, (toporef[j][0], xml, wid, gid))
 						poly_results = cur.fetchall()
 					else: 
 						print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 						#print gazet_entry
-				SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.did = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
+				SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.docid = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
 				#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
-				cur.execute(SQL_Point_Dist, (toporef[j][0], toporef[j][1]['did'], int(toporef[j][1]['start'])))
+				cur.execute(SQL_Point_Dist, (toporef[j][0], xml, wid))
 				point_results = cur.fetchall()
-				#cur.execute(SQL_Poly_Dist, (toporef[j][0], xml))
-				#poly_results = cur.fetchall()
-				#print toporef[j][0]
-				#print xml
-				#print rank_dict[i[0]][2][1]
-				#print rank_dict[i[0]][2][0]
-				#print toporef[j][0], toporef[j][1]['did'], int(toporef[j][1]['start'])
-				#print point_results
-				#print rank_dict[i[0]][2][1], rank_dict[i[0]][2][0]
 
 				#print results
 				pointdist = point_results[0][0]
@@ -772,24 +731,30 @@ def VectorSum(wordref, toporef, total_topo, point_error, poly_error, cur, lat_lo
 					polydist = (poly_results[0][0] / float(1000))
 				else: polydist = pointdist
 
-				print "Point Dist: ", pointdist
-				print "Poly Dist: ", polydist
-
-				point_dist_list.append(pointdist)
-				poly_dist_list.append(polydist)
-				if pointdist > 1000.0:
-					point_bigerror.append([toporef[j][0], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
-				if polydist > 1000.0:
-					poly_bigerror.append([toporef[j][0], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+				total_results.setdefault('point_dist_list', list()).append(pointdist)
+				#point_dist_list.append(pointdist)
+				#poly_dist_list.append(polydist)
+				total_results.setdefault('poly_dist_list', list()).append(polydist)
+				#if pointdist > 1000.0:
+					#point_bigerror.append([toporef[j][1], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
+				#	total_results[in_domain_lamb].setdefault('point_bigerror', list()).append([toporef[j][1], pointdist, tbl, [gold_lat, gold_long], rank_dict[i[0]][2]])
+				#if polydist > 1000.0:
+				#	total_results[in_domain_lamb].setdefault('poly_bigerror', list()).append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2]])
+				#	#poly_bigerror.append([toporef[j][1], polydist, tbl, gid, [gold_lat, gold_long], rank_dict[i[0]][2], rank_dict[i[0]][4]])
 				if pointdist <= 161.0:
-					point_total_correct += 1
+					#point_total_correct += 1
+					total_results['point_total_correct'] = total_results.get('point_total_correct', 0) + 1
 				if polydist <= 161.0:
-					poly_total_correct += 1
-				point_error += pointdist
-				poly_error += polydist
+					#poly_total_correct += 1
+					total_results['poly_total_correct'] = total_results.get('poly_total_correct', 0) + 1
+					#print "Poly Total Correct for lambda: ", total_results[theta_comb]['poly_total_correct']
+				#point_error += pointdist
+				total_results['point_error'] = total_results.get('point_error', 0) + pointdist
+				#poly_error += polydist
+				total_results['poly_error'] = total_results.get('poly_error', 0) + polydist
 		#print "====================="
 		#print len(contextlist)
-	return point_error, poly_error, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct
+	return total_results, total_topo
 
 def flatten(l):
     for el in l:

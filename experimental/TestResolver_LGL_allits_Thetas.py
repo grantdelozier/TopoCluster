@@ -604,8 +604,8 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			poly_error_sum = theta_dict_totals[in_domain_lamb]['poly_error']
 			point_total_correct = theta_dict_totals[in_domain_lamb]['point_total_correct']
 			poly_total_correct = theta_dict_totals[in_domain_lamb]['poly_total_correct']
-			point_dist_list = theta_dict_totals[in_domain_lamb]['point_dist_list']
-			poly_dist_list = theta_dict_totals[in_domain_lamb]['poly_dist_list']
+			point_dist_list = theta_dict_totals[in_domain_lamb]['point_dist_list'].sort()
+			poly_dist_list = theta_dict_totals[in_domain_lamb]['poly_dist_list'].sort()
 			print "=============Vector Sum================"
 			print "Total Toponyms: ", total_topo
 			print "Window: ", window

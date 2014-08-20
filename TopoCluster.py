@@ -3,7 +3,7 @@ import os
 
 PROJECT_ROOT = os.path.dirname(__file__)
 sys.path.append(os.path.join(PROJECT_ROOT,"scripts"))
-
+sys.path.append(os.path.join(PROJECT_ROOT,"experimental"))
 
 if len(sys.argv) >= 3 and "--help" not in sys.argv:
     print sys.argv
