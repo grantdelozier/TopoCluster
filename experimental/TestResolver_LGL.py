@@ -528,8 +528,10 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		poly_error_sum = total_results['poly_error']
 		point_total_correct = total_results['point_total_correct']
 		poly_total_correct = total_results['poly_total_correct']
-		point_dist_list = total_results['point_dist_list'].sort()
-		poly_dist_list = total_results['poly_dist_list'].sort()
+		total_results['point_dist_list'].sort()
+		point_dist_list = total_results['point_dist_list']
+		total_results['poly_dist_list'].sort()
+		poly_dist_list = total_results['poly_dist_list']
 		print "=============Vector Sum================"
 		print "Total Toponyms: ", total_topo
 		print "Window: ", window
@@ -549,7 +551,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			w.write("Out of domain Local Statistics Table Name: " + str(out_domain_stat_tbl) + '\r\n')
 			w.write("Test XML directory/file path: " + test_xml + '\r\n')
 			w.write("In Corp Lamb: " + str(in_corp_lamb) + '\r\n')
-			w.write("Out Corp Lamb: " + str(out_corp+lamb) + '\r\n')
+			w.write("Out Corp Lamb: " + str(out_corp_lamb) + '\r\n')
 			w.write("Window: " + str(window) + '\r\n')
 			w.write("Total Toponyms: " + str(total_topo) + '\r\n')
 			w.write("Main Topo Weight:"+ str(main_topo_weight) + '\r\n')
@@ -609,7 +611,8 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		contextlist = getContext(wordref, j, window, stopwords, toporef)
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
 		if topobase.title() != topobase and (len(toporef[j][0]) != 2 and len(toporef[j][0]) != 3):
-			contextlist.append(topobase.title())
+			#contextlist.append(topobase.title())
+			contextlist.append([topobase.title(), "MainTopo", 0])
 			#topotokens.append(toporef[j][0].title())
 			topobase = topobase.title()
 			#print contextlist
@@ -624,12 +627,14 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				#contextlist.append(token)
 			#topotokens.append(topobase.replace('.', ''))
 			topotokens.append(combinedtokens)
-			contextlist.append(combinedtokens)
+			#contextlist.append(combinedtokens)
+			contextlist.append([combinedtokens, "MainTopo", 0])
 		else: topotokens.append(topobase)
 		gazet_topos = topotokens
 		if " " in topobase:
 			topotokens.append(topobase.replace(" ", '|'))
-			contextlist.append(topobase.replace(" ", '|'))
+			#contextlist.append(topobase.replace(" ", '|'))
+			contextlist.append([topobase.replace(" ", '|'), "MainTopo", 0])
 			#for token in topobase.split(" "):
 			#	topotokens.append(token)
 			#	contextlist.append(token)
@@ -672,7 +677,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 					#Make a ranked list of the most beneficial words for a topo
 					for gid in subset_ranked:
 						#print gid
-						contrib_dict.setdefault(gid, list()).append([word, subset_ranked[gid]])
+						contrib_dict.setdefault(gid, list()).append([word[0], subset_ranked[gid]])
 						#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
 					#print word, ranked_fetch[:5]
 					totaldict += Counter(subset_ranked)
