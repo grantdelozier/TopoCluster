@@ -1,5 +1,6 @@
 import sys
 import os
+import io
 
 
 import psycopg2
@@ -264,11 +265,13 @@ def parse_xml2(afile):
 	toporef = {}
 	i = 0
 	sid = 0
+	domain = ""
 	
 	#print root.tag
 	#print root.attrib
 	for child in root.iter('doc'):
 		did = child.attrib['id']
+		domain = child.attrib['domain']
 		sid = 0
 		for c in child:
 			#print child.attrib
@@ -293,7 +296,7 @@ def parse_xml2(afile):
 							if "selected" in sub3.attrib:
 								#print sub3.attrib
 								toporef[i] = [wordref[i], sub3.attrib, did, wid]
-	return wordref, toporef
+	return wordref, toporef, domain
 
 def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector):
 	span = 0
@@ -398,8 +401,9 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
-def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight,
- country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file):
+def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, 
+	main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
+	region_tbl, state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, tst_tbl, results_file, LocalLexiconFile = "None"):
 	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
 	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
 	print "Test XML directory/file path: ", test_xml
@@ -441,6 +445,20 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	poly_total_correct = 0
 
 	start_time = datetime.datetime.now()
+
+	Local_Lex = {}
+	if LocalLexiconFile != "None":
+		with io.open(LocalLexiconFile, 'r', encoding='utf-8') as r:
+			for line in r:
+				row = line.strip().split('\t')
+				if len(row) > 1:
+					domain = row[0]
+					#print row
+					words = row[1].split(' ')
+					Local_Lex[domain] = words
+
+
+
 
 	if os.path.isdir(test_xml) == True:
 		print "Reading as directory"
@@ -517,15 +535,17 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		total_results['poly_total_correct'] = 0
 		total_results['point_total_correct'] = 0
 
+		predictions = []
+
 		for xml in files:
 			m += 1
 			print xml
 			print "Left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
-			wordref, toporef = parse_xml2(test_xml+'/'+xml)
-			total_results, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
-				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml, country_tbl, region_tbl, state_tbl,
-				 geonames_tbl, tst_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, total_results)
+			wordref, toporef, domain = parse_xml2(test_xml+'/'+xml)
+			total_results, total_topo, predictions = VectorSum(wordref, toporef, domain, total_topo, total_results, cur, lat_long_lookup,  
+				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml, predictions, country_tbl, region_tbl, state_tbl, tst_tbl,
+				 geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, Local_Lex)
 
 		point_error_sum = total_results['point_error']
 		poly_error_sum = total_results['poly_error']
@@ -549,7 +569,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		print "Polygon Median Error Distance: ", poly_dist_list[total_topo/2]
 		print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
 		with open(results_file, 'a') as w:
-			w.write("=============Vector Sum================" + '\r\n')
+			w.write("=============Vector Sum Results================" + '\r\n')
 			w.write("In Domain Local Statistics Table Name: " + str(in_domain_stat_tbl) + '\r\n')
 			w.write("Out of domain Local Statistics Table Name: " + str(out_domain_stat_tbl) + '\r\n')
 			w.write("Test XML directory/file path: " + test_xml + '\r\n')
@@ -566,6 +586,42 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			w.write("Polygon Average Error Distance " + str((float(poly_error_sum)/float(total_topo))) + '\r\n')
 			w.write("Polygon Median Error Distance: " + str(poly_dist_list[total_topo/2]) + '\r\n' )
 			w.write("Polygon Accuracy @ 161km : " + str(float(poly_total_correct) / float(total_topo)) + '\r\n' )
+		print "=============Vector Sum================"
+		print "Total Toponyms: ", total_topo
+		print "Window: ", window
+		print "Percentile: ", percentile
+		print "Main Topo weight:", main_topo_weight
+		print "Other Topo weight:", other_topo_weight
+		print "Other word weight:", other_word_weight
+		#Write all toponym resolution results to results file
+		with io.open(results_file, 'a', encoding='utf-8') as w:
+			w.write(u"=============TopoCluster Run Settings================" + '\r\n')
+			w.write(u"In Domain Local Statistics Table Name: " + unicode(in_domain_stat_tbl) + '\r\n')
+			w.write(u"Out of domain Local Statistics Table Name: " + unicode(out_domain_stat_tbl) + '\r\n')
+			w.write(u"Test XML directory/file path: " + test_xml + '\r\n')
+			w.write(u"In Domain Corp Lambda: " + unicode(in_corp_lamb) + '\r\n')
+			w.write(u"Out Domain Corp Lambda: " + unicode(out_corp_lamb) + '\r\n')
+			w.write(u"Window: " + unicode(window) + '\r\n')
+			w.write(u"Total Toponyms: " + str(total_topo) + '\r\n')
+			w.write(u"Main Topo Weight:"+ unicode(main_topo_weight) + '\r\n')
+			w.write(u"Other Topo Weight:"+ unicode(other_topo_weight) + '\r\n')
+			w.write(u"Other Word Weight:"+ unicode(other_word_weight) + '\r\n')
+			w.write(u"=====================================================" + '\r\n')
+			w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long,ErrorDistance\r\n")
+			for p in predictions:
+				#The encoding of the toponym can change based on the document being read
+				table_toponym = p[6]
+				if isinstance(p[0], str):
+					toponym = p[0].decode('utf-8')
+				if isinstance(p[0], unicode):
+					toponym = p[0].encode('utf-8').decode('utf-8')
+				#print p[1]
+				#The encoding of the toponym name from the table can change based on the table results were pulled from
+				if isinstance(p[6], str):
+					table_toponym = p[6].decode('utf-8')
+				if isinstance(p[6], unicode):
+					table_toponym = p[6].encode('utf-8').decode('utf-8')
+				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+ u',' + unicode(p[9]) + u',' + unicode(p[10]) + '\r\n')
 	end_time = datetime.datetime.now()
 
 	print "Total Time: ", end_time - start_time
@@ -584,6 +640,7 @@ def getCorrectTable(word, tab1, tab2, tab3):
 			table = 'enwiki20130102_ner_final_other'
 	return table
 
+#Merge a list of Gi* dictionaries stogether, summing values
 def merge4(dicts):
 	merged = {}
 	for d in dicts:
@@ -591,8 +648,9 @@ def merge4(dicts):
 			merged[k] = merged.get(k, 0.0) + d[k]
 	return merged
 
-def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml,
- country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, total_results):
+def VectorSum(wordref, toporef, domain, total_topo, total_results, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, 
+	other_word_weight, xml, predictions, country_tbl, region_tbl, state_tbl, tst_tbl,
+	geonames_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, Local_Lex):
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
@@ -601,12 +659,12 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		if total_topo > 0:
 			print "Total Topo:", total_topo
 			print "Poly Total Acc @ 161: ", float(total_results['poly_total_correct'])/float(total_topo)
-			print "Mean Error Poly: ", float(total_results['poly_error'])/float(total_topo)
-			print "Point Total Acc @ 161: ", float(total_results['point_total_correct'])/float(total_topo)
-			print "Mean Error Point: ", float(total_results['point_error'])/float(total_topo)
+			#print "Mean Error Poly: ", float(total_results['poly_error'])/float(total_topo)
+			#print "Point Total Acc @ 161: ", float(total_results['point_total_correct'])/float(total_topo)
+			#print "Mean Error Point: ", float(total_results['point_error'])/float(total_topo)
 			print "=============================="
 		total_topo += 1
-		topobase = str(toporef[j][0])
+		topobase = toporef[j][0]
 		print topobase
 		xml = toporef[j][2]
 		wid = toporef[j][3]
@@ -674,16 +732,41 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 
 					adict3 = merge4([adict, adict2])
 					#Get Ranked List of gid's sorting by value
-					ranked_fetch = sorted(adict3.items(), key=itemgetter(1), reverse=True)
+					ranked_fetch = dict(sorted(adict3.items(), key=itemgetter(1), reverse=True))
 					#Cut off the bottom percentile (optional)
-					subset_ranked = dict(ranked_fetch[:int(len(ranked_fetch)*percentile)])
+					#subset_ranked = dict(ranked_fetch[:int(len(ranked_fetch)*percentile)])
 					#Make a ranked list of the most beneficial words for a topo
-					for gid in subset_ranked:
-						#print gid
-						contrib_dict.setdefault(gid, list()).append([word[0], subset_ranked[gid]])
-						#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
+					#for gid in subset_ranked:
+					#	#print gid
+					#	contrib_dict.setdefault(gid, list()).append([word[0], subset_ranked[gid]])
+					#	#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
 					#print word, ranked_fetch[:5]
-					totaldict += Counter(subset_ranked)
+					totaldict += Counter(ranked_fetch)
+		if len(Local_Lex) > 0:
+			if domain in Local_Lex:
+				print "Found Domain", domain
+				print Local_Lex[domain]
+				for cw in Local_Lex[domain]:
+
+					table = getCorrectTable(cw, tab1, tab2, tab3)
+					table2 = in_domain_stat_tbl
+					
+					weight = other_topo_weight
+
+					SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (table, '%s')
+					cur.execute(SQL, (cw, ))
+					adict =  dict([(int(k), weight * out_corp_lamb * float(v)) for k, v in cur.fetchall()])
+					
+					if in_domain_stat_tbl != "None":
+						SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (in_domain_stat_tbl, '%s')
+						cur.execute(SQL2, (cw, ))
+						adict2 =  dict([(int(k), weight * in_corp_lamb * float(v)) for k, v in cur.fetchall()])
+					else: adict2 = {}
+
+					adict3 = merge4([adict, adict2])
+
+					totaldict += Counter(adict3)
+
 		#print totaldict
 		sorted_total = sorted(totaldict.items(), key=itemgetter(1), reverse=True)
 		y = 0
@@ -691,8 +774,12 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		#ranked_contrib = sorted(contrib_dict.items(), key=itemgetter(1), reverse=True)
 		for t in sorted_total:
 			y += 1 
-			contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
-			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], math.fabs(lat_long_lookup[t[0]][0]-gold_lat)+math.fabs(lat_long_lookup[t[0]][1]-gold_long), contrib_sub[:5]]
+			#print t
+			#print t[0]
+			#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
+			#rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], math.fabs(lat_long_lookup[t[0]][0]-gold_lat)+math.fabs(lat_long_lookup[t[0]][1]-gold_long), contrib_sub[:5]]
+			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]]]
+			#rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], math.fabs(lat_long_lookup[t[0]][0]-gold_lat)+math.fabs(lat_long_lookup[t[0]][1]-gold_long)]
 
 		#print sorted_total[:20]
 		y = 0
@@ -704,8 +791,8 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 					gazet_topos.append(topobase)
 				if toporef[j][0] not in gazet_topos:
 					gazet_topos.append(toporef[j][0])
-				print rank_dict[i[0]]
-				gazet_entry = GetGazets(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt)
+				#print rank_dict[i[0]]
+				gazet_entry = GetGazets2(cur, topotokens, rank_dict[i[0]][2], country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt)
 				poly_results = []
 				tbl = "No Tbl Match"
 				gid = 0
@@ -713,7 +800,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				if len(gazet_entry) > 0:
 					print "Gazet Entry: ", gazet_entry
 					if len(gazet_entry) == 1:
-						print "Executing Distance SQL for ", gazet_entry
+						#print "Executing Distance SQL for ", gazet_entry
 						gid = int(gazet_entry[0][1])
 						tbl = gazet_entry[0][0]
 						name = gazet_entry[0][2]
@@ -723,21 +810,37 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 						#point_results = cur.fetchall()
 						cur.execute(SQL_Poly_dist, (toporef[j][0], xml, wid, gid))
 						poly_results = cur.fetchall()
+
+						centroid_lat = gazet_entry[0][3]
+						centroid_long = gazet_entry[0][4]
+						
+
 					else: 
 						print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 						#print gazet_entry
+				else:
+					pass
+					
+
 				SQL_Point_Dist = "SELECT ST_Distance(p1.pointgeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.placename = %s and p1.docid = %s and p1.wid = %s;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], tst_tbl, '%s', '%s', '%s')
 				#SQL_Poly_Dist = "SELECT ST_Distance(p1.polygeog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM trconllf as p1 WHERE p1.placename = %s and p1.docname = %s and p1.polygeog IS NOT NULL;" % (rank_dict[i[0]][2][1], rank_dict[i[0]][2][0], '%s', '%s')
 				cur.execute(SQL_Point_Dist, (toporef[j][0], xml, wid))
 				point_results = cur.fetchall()
 
+
 				#print results
 				pointdist = point_results[0][0]
 				pointdist = pointdist / float(1000)
+				predictions.append([toporef[j][0], xml, j, "TOPO_ESTIMATE", tbl, i[0], toporef[j][0], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1], domain, pointdist ] )
+
 
 				if len(poly_results) > 0:
 					polydist = (poly_results[0][0] / float(1000))
-				else: polydist = pointdist
+					#predictions.append([toporef[j][0], xml, j, "GAZET", tbl, gid, name, centroid_lat, centroid_long, domain, polydist ] )
+				else: 
+					polydist = pointdist
+					#predictions.append([toporef[j][0], xml, j, "TOPO_ESTIMATE", tbl, i[0], toporef[j], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1], domain, pointdist ] )
+
 
 				total_results.setdefault('point_dist_list', list()).append(pointdist)
 				#point_dist_list.append(pointdist)
@@ -762,7 +865,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				total_results['poly_error'] = total_results.get('poly_error', 0) + polydist
 		#print "====================="
 		#print len(contextlist)
-	return total_results, total_topo
+	return total_results, total_topo, predictions
 
 def flatten(l):
     for el in l:
@@ -832,6 +935,72 @@ def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, geon
 		return [ranked_gazet[0]]
 	return gazet_entry
 
+def GetGazets2(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt):
+	names = tuple(x for x in placenames)
+	#print names
+	gazet_entry = []
+	ranked_gazet = []
+	cntry_gid_list = list()
+	cntry_gid_list.extend(flatten([country_alt.get(g) for g in placenames if g in country_alt]))
+	cntry_gid_list.extend([-99])
+	region_gid_list = list()
+	region_gid_list.extend(flatten([region_alt.get(g) for g in placenames if g in region_alt]))
+	region_gid_list.extend([-99])
+	state_gid_list = list()
+	state_gid_list.extend(flatten([state_alt.get(g) for g in placenames if g in state_alt]))
+	state_gid_list.extend([-99])
+	pplc_gid_list = list()
+	#print datetime.datetime.now()
+	pplc_gid_list.extend(flatten(pplc_alt.get(g, -99) for g in placenames))
+	#print datetime.datetime.now()
+	#print "PPL gids: ", len(pplc_gid_list)
+	pplc_gid_list.extend([-99])
+	#print cntry_gid_list
+	SQL1 = "SELECT p1.gid, p1.name, ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p1 WHERE p1.name IN %s or p1.gid IN %s or p1.postal IN %s or p1.abbrev IN %s or p1.name_long IN %s;" % (latlong[1], latlong[0], country_tbl, '%s', '%s', '%s', '%s', '%s')
+	SQL2 = "SELECT p2.gid, p2.name, ST_Distance(p2.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p2 WHERE p2.name in %s or p2.gid in %s;" % (latlong[1], latlong[0], region_tbl, '%s', '%s')
+	SQL3 = "SELECT p3.gid, p3.name, ST_Distance(p3.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p3 WHERE p3.name in %s or p3.gid in %s or p3.abbrev in %s or p3.postal in %s;" % (latlong[1], latlong[0], state_tbl, '%s', '%s', '%s', '%s')
+	SQL4 = "SELECT p4.gid, p4.name, ST_Distance(p4.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)')) FROM %s as p4 WHERE p4.name in %s or p4.asciiname in %s or p4.gid in %s;" % (latlong[1], latlong[0], geonames_tbl, '%s', '%s', '%s')
+	#print "Got here"
+	#print SQL1
+	#print "Countries"
+
+	cur.execute(SQL1, (names, tuple(cntry_gid_list), names, names, names))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([country_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
+	#print "States"
+	cur.execute(SQL2, (names, tuple(region_gid_list)))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([region_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
+	#print "Regions"
+	cur.execute(SQL3, (names, tuple(state_gid_list), names, names))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([state_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
+	#print "PPL"
+	cur.execute(SQL4, (names, names, tuple(pplc_gid_list)))
+	returns = cur.fetchall()
+	for row in returns:
+		gazet_entry.append([geonames_tbl, row[0], row[1], float(row[2])/1000.0])
+		#print "!!!Found Gazet Match!!!"
+		#print gazet_entry[-1]
+	
+	if len(gazet_entry) >= 1:
+		ranked_gazet = sorted(gazet_entry, key=itemgetter(3), reverse=False)
+		SQL_Centroid = "SELECT p5.gid, ST_Y(ST_Centroid(p5.geog::geometry)), ST_X(ST_Centroid(p5.geog::geometry)) FROM %s as p5 WHERE p5.gid = %s;" % (ranked_gazet[0][0] ,'%s')
+		cur.execute(SQL_Centroid, (ranked_gazet[0][1], ))
+		results = cur.fetchall()[0]
+		latlong = [results[1], results[2]]
+		return [[ranked_gazet[0][0], ranked_gazet[0][1], ranked_gazet[0][2], latlong[0], latlong[1]]]
+	return gazet_entry
+
 def GetGazets_DistLimited(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, geonames_tbl):
 	names = tuple(x for x in placenames)
 	DistLimit = 300.0
@@ -894,3 +1063,31 @@ def GetGazets_DistLimited(cur, placenames, latlong, country_tbl, region_tbl, sta
 def combine_tuples(t1, t2):
 	tsum = t1[1] + t2[1]
 	return (t1[0], tsum)
+
+
+
+out_domain_stat_tbl = ""
+in_domain_stat_tbl = "lgl_dev_kernel100k_epanech_gi"
+conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
+tst_tbl = "lgl_test_classic"
+gtbl = "globalgrid_5_clip_geog"
+window = 15
+percentile = 1.0
+country_tbl = "countries_2012"
+region_tbl = "regions_2012"
+state_tbl = "states_2012"
+geonames_tbl = "geonames_all"
+main_topo_weight = 20.0
+other_topo_weight = 5.0
+other_word_weight = 1.0
+in_corp_lamb = 0.5
+out_corp_lamb = 0.5
+#test_xml = "/home/grant/Downloads/LGL/articles/dev_classicxml"
+test_xml = "/home/grant/Downloads/LGL/articles/test_classicxml"
+#test_xml = "/home/grant/Downloads/LGL/articles/test_subset"
+results_file = "LGL_Test_Predictions_PointV2.txt"
+#LocalLexiconFile = "/home/grant/devel/TopoCluster_Results/LGL_LocalSpatialLexicon.txt"
+
+calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, 
+	main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
+	region_tbl, state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, tst_tbl, results_file)

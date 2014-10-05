@@ -50,51 +50,6 @@ def parse_xml(afile):
 							toporef[i] = [wordref[i], sub3.attrib]
 	return wordref, toporef
 
-def getContext(wordref, i, window, stopwords):
-	j = i
-	contextlist = [wordref[j]]
-	while j > 1:
-		j = j - 1
-		if i - window >= j:
-			break
-		if wordref[j] not in stopwords:
-			try:
-				#u1 = unicode(wordref[j], 'utf-8')
-				if len(wordref[j]) == 1 and block(wordref[j]) == "General Punctuation":
-					pass
-					#print "~~~~Forbidden Character~~~~"
-					#print wordref[j]
-					#print "~~~~~~~~~~~~~~~~~~~~~"
-					#sys.exit()
-				else:
-					contextlist.append(wordref[j])
-			except: 
-				#print "~~~~Broken String~~~~"
-				#print wordref[j]
-				pass
-			#	print "~~~~~~~~~~~~~~~~~~~~~"
-	#print len(contextlist)
-	j = i
-	while j < len(wordref):
-		j = j + 1
-		if i + window < j:
-			break
-		if wordref[j] not in stopwords:
-			try:
-				if len(wordref[j]) == 1 and block(wordref[j]) == "General Punctuation":
-					pass
-					#print "~~~~Forbidden Character~~~~"
-					#print wordref[j]
-					#print "~~~~~~~~~~~~~~~~~~~~~"
-					#sys.exit()
-				else:
-					contextlist.append(wordref[j])
-			except:
-				pass 
-				#print "~~~~Broken String~~~~"
-				#print wordref[j]
-			#	print "~~~~~~~~~~~~~~~~~~~~~"
-	return contextlist
 
 def getContext_NoteTopos(wordref, i, window, stopwords, toporef):
 	j = i
@@ -227,26 +182,37 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		total_topo = 0
 		closest_gids = set([])
 
+		opf = io.open(results_file, 'w', encoding='utf-8')
+		opf.close()
+
 		print "Getting closest gids..."
 		for xml in files:
+			Observations = {}
 			print xml
 			wordref, toporef = parse_xml(test_xml+'/'+xml)
 			Observations = get_solutions(wordref, toporef, xml, tst_tbl, window, out_domain_stat_tbl, in_domain_stat_tbl, cur, stopwords, lat_long_lookup, results_file, total_topo, Observations)
 
 			opf = io.open(results_file, 'a', encoding='utf-8')
 			for ob in Observations:
-				print ob
-				s1 = [str.join('' [' ', sol]) for sol in Observations[ob]['solutions']]
-				s2 = str.join('', s1)
+				#print ob
+				#for sol in Observations[ob]['solutions']:
+				#	print sol
+				#s1 = [str.join('', [' ', feat[0], ':', str(feat[1])]) for feat in FeatureList]
+				#sys.exit()
+				s1 = [' '.join(['', sol.encode('utf-8')]) for sol in Observations[ob]['solutions']]
+				#for item in s1:
+				#	print item
+				s2 = ''.join(s1)
 
-				s3 = [str.join('', [' ', feat]) for feat in Observations[ob]['features']]
-				s4 = str.join('', s3)
+				s3 = [' '.join(['', feat.encode('utf-8')]) for feat in Observations[ob]['features']]
+				s4 = ''.join(s3)
 
-				row = s2 + " |"  + s4 + '\r\n'
+				row = (s2 + " |"  + s4 + '\r\n').decode('utf-8')
 
 				opf.write(row)
-				
+			
 			opf.close()
+			#sys.exit()
 			
 			#point_error_sum, poly_error_sum, total_topo, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct = VectorSum(wordref, toporef, total_topo, point_error_sum, poly_error_sum, cur, lat_long_lookup,  
 			#	percentile, window, stopwords, place_name_weight, xml, point_bigerror, poly_bigerror, point_dist_list, poly_dist_list, country_tbl, region_tbl, state_tbl,
@@ -255,12 +221,12 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		conn.close()
 
 
-def get_solutions(wordref, toporef, xml, tst_tbl, window, table, in_domain_stat_tbl, cur, stopwords, lat_long_lookup, results_file, total_topo, closest_gids):
+def get_solutions(wordref, toporef, xml, tst_tbl, window, table, in_domain_stat_tbl, cur, stopwords, lat_long_lookup, results_file, total_topo, Observations):
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
 	tab3 = [chr(item) for item in range(ord('t'), ord('z')+1)]
 	for j in toporef:
-		Observations[j] = {}
+		Observations[str(j)+'-'+xml] = {}
 		topobase = toporef[j][0]
 		total_topo += 1
 		#print topobase, total_topo
@@ -272,7 +238,7 @@ def get_solutions(wordref, toporef, xml, tst_tbl, window, table, in_domain_stat_
 			#contextlist.append(topobase.title())
 			contextlist.append([topobase.title(), "MainTopo", 0])
 			#topotokens.append(toporef[j][0].title())
-			topobase = topobase.title()
+			#topobase = topobase.title()
 			#print contextlist
 			#print "Inside title case changer"
 			#print topobase
@@ -290,9 +256,9 @@ def get_solutions(wordref, toporef, xml, tst_tbl, window, table, in_domain_stat_
 		else: topotokens.append(topobase)
 		gazet_topos = topotokens
 		if " " in topobase:
-			topotokens.append(topobase.replace(" ", '|'))
+			topotokens.append(topobase.replace(" ", '_'))
 			#contextlist.append(topobase.replace(" ", '|'))
-			contextlist.append([topobase.replace(" ", '|'), "MainTopo", 0])
+			contextlist.append([topobase.replace(" ", '_'), "MainTopo", 0])
 			#for token in topobase.split(" "):
 			#	topotokens.append(token)
 			#	contextlist.append(token)
@@ -306,45 +272,52 @@ def get_solutions(wordref, toporef, xml, tst_tbl, window, table, in_domain_stat_
 		#Currently finds closest global grid points to lat long in corpus
 		#Need a new version that finds a set of grid points within the polygon of the gold reference
 		#closest_gid_SQL = "Select p1.gid from %s as p1 ORDER BY ST_Distance(p1.geog, ST_GeographyFromText('SRID=4326;POINT(%s %s)'));" % (gtbl ,gold_long, gold_lat)
-		closest_gid_SQL = "SELECT p2.gid, ST_Distance(p2.geog, p1.geog) from %s as p1, %s as p2 where p1.placename = %s and p1.docname = %s and p1.wid = %s ORDER BY ST_Distance(p2.geog, p1.geog) ASC;" % (tst_tbl, gtbl, '%s', '%s', '%s')
+		closest_gid_SQL = "SELECT p2.gid, ST_Distance(p2.geog, p1.polygeog) from %s as p1, %s as p2 where p1.placename = %s and p1.docname = %s and p1.wid = %s ORDER BY ST_Distance(p2.geog, p1.polygeog) ASC;" % (tst_tbl, gtbl, '%s', '%s', '%s')
 
 		cur.execute(closest_gid_SQL, (topobase, gold_doc, gold_wid))
 
 		m = 0
 		print topobase
-		for gid_point in cur.fetchall():
+		query_results = cur.fetchall()
+		#print len(query_results)
+		for gid_point in query_results:
 			gid = gid_point[0]
 			distance = gid_point[1]
-			print gid, distance
+			#print gid, distance
 			if distance == 0.0:
-				Obervations[j].setdefault('solutions', list()).append(str(gid)+":0")
+				Observations[str(j)+'-'+xml].setdefault('solutions', list()).append(str(gid)+":0")
 			elif m < 10:
 				m += 1
-				Observations[j].setdefault('solutions', list()).append(str(gid)+":"+str(m))
+				Observations[str(j)+'-'+xml].setdefault('solutions', list()).append(str(gid)+":"+str(m))
 				if m >= 10:
 					break
 
 		for word in contextlist:
 			if word[0] not in stopwords:
 				if word[1] == "MainTopo":
-					Observations[j].setdefault('features', list()).append("MainTopo-"+word[0].replace(' ', '|'))
+					Observations[str(j)+'-'+xml].setdefault('features', list()).append("MainTopo-"+word[0].replace(' ', '_').replace('|', '_'))
 				elif word[1] == "OtherTopo":
-					Observations[j].setdefault('features', list()).append("OtherTopo-"+word[0].replace(' ', '|'))
+					#print word[0].replace(' ', '_')
+					Observations[str(j)+'-'+xml].setdefault('features', list()).append("OtherTopo-"+word[0].replace(' ', '_').replace('|', '_'))
 				else:
-					Observations[j].setdefault('features', list()).append(word[0])
+					Observations[str(j)+'-'+xml].setdefault('features', list()).append(word[0])
 
+		if 'solutions' not in Observations[str(j)+'-'+xml]:
+			print "No solution found for", topobase, gold_wid, gold_doc
+			sys.exit("Error")
 
+	print "Number Observations found: ", len(Observations)
 	return Observations
 
 in_domain_stat_tbl = "trconllf_dev_trainsplit1_kernel100k_epanech_gi"
 out_domain_stat_tbl = "enwiki20130102_train_kernel100k_grid5_epanech_allwords_ner_fina"
-test_xml = "/home/grant/devel/TopCluster/trconllf/xml/dev_trainsplit1/"
+test_xml = "/home/grant/devel/TopCluster/trconllf/xml/dev_trainsplit1"
 conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
 gtbl = "globalgrid_5_clip_geog"
 window = 15
 percentile = 1.0
 tst_tbl = "trconllf_dev"
-results_file = "TrainingFeatures_TRCoNLLV2.txt"
+results_file = "/home/grant/devel/TopoCluster_Thetas/TRCONLL/vowpal_wabbit/TrainingFeatures_TRCoNLL_Devsplit1.txt"
 
 opf = io.open(results_file, 'w', encoding='utf-8')
 opf.close()

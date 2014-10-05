@@ -878,3 +878,26 @@ def GetGazets_DistLimited(cur, placenames, latlong, country_tbl, region_tbl, sta
 def combine_tuples(t1, t2):
 	tsum = t1[1] + t2[1]
 	return (t1[0], tsum)
+
+out_domain_stat_tbl = ""
+in_domain_stat_tbl = "trconllf_dev_docs_kernel100k_epanech_gi"
+conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
+tst_tbl = "trconllf"
+gtbl = "globalgrid_5_clip_geog"
+window = 15
+percentile = 1.0
+country_tbl = "countries_2012"
+region_tbl = "regions_2012"
+state_tbl = "states_2012"
+geonames_tbl = "geonames_all"
+main_topo_weight = 40.0
+other_topo_weight = 1.0
+other_word_weight = 0.5
+in_corp_lamb = 0.6
+out_corp_lamb = 0.4
+#test_xml = "/home/grant/Downloads/LGL/articles/dev_classicxml"
+test_xml = "/home/grant/devel/TopCluster/trconllf/xml/test"
+results_file = "TRCoNLL_test_Predictions_Point.txt"
+
+calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
+	region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file)

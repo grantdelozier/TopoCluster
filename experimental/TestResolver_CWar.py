@@ -563,22 +563,28 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 	for j in toporef:
 		xml = toporef[j][3]
 		wid = toporef[j][4]
-		print "=======Vector Sum=============="
-		print "Total Topo: ", total_topo
 		if total_topo != 0 and total_topo % 10 == 0:
-			print "Mean Poly Error: ", float(poly_error)/float(total_topo)
-			print "Poly Acc @ 161 km: ", float(poly_total_correct)/float(total_topo)
-			print "Mean Error Point: ", float(point_error)/float(total_topo)
-			print "Point Total Acc @ 161: ", float(point_total_correct)/float(total_topo)
+			print "=======Vector Sum=============="
+			print "Total Topo: ", total_topo
+			tpntl = sorted(total_results['poly_dist_list'])
+			print len(total_results['poly_dist_list'])/2
+			print "Poly Median Error: ", tpntl[len(total_results['poly_dist_list'])/2]
+			print "Mean Poly Error: ", float(total_results['poly_error'])/float(total_topo)
+			print "Poly Acc @ 161 km: ", float(total_results['poly_total_correct'])/float(total_topo)
+			print "Mean Error Point: ", float(total_results['point_error'])/float(total_topo)
+			tpl = sorted(total_results['point_dist_list'])
+			print "Point Median Error: ", tpl[len(total_results['point_dist_list'])/2]
+			print "Point Total Acc @ 161: ", float(total_results['point_total_correct'])/float(total_topo)
 			print "Time taken: ", datetime.datetime.now() - start_time
 		total_topo += 1
-		topobase = str(toporef[j][1])
+		topobase = toporef[j][1]
 		print topobase
 		topotokens = []
-		contextlist = getContext(wordref, j, window, stopwords)
+		contextlist = getContext(wordref, j, window, stopwords, toporef)
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
 		if topobase.title() != topobase and (len(toporef[j][1]) != 2 and len(toporef[j][1]) != 3):
-			contextlist.append(topobase.title())
+			#contextlist.append(topobase.title())
+			contextlist.append([topobase.title(), "MainTopo", 0])
 			#topotokens.append(toporef[j][0].title())
 			topobase = topobase.title()
 			#print contextlist
@@ -593,16 +599,18 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				#contextlist.append(token)
 			#topotokens.append(topobase.replace('.', ''))
 			topotokens.append(combinedtokens)
-			contextlist.append(combinedtokens)
+			#contextlist.append(combinedtokens)
+			contextlist.append([combinedtokens, "MainTopo", 0])
 		else: topotokens.append(topobase)
 		gazet_topos = topotokens
 		if " " in topobase:
 			topotokens.append(topobase.replace(" ", '|'))
-			contextlist.append(topobase.replace(" ", '|'))
+			#contextlist.append(topobase.replace(" ", '|'))
+			contextlist.append([topobase.replace(" ", '|'), "MainTopo", 0])
 			#for token in topobase.split(" "):
 			#	topotokens.append(token)
 			#	contextlist.append(token)
-		print toporef[j]
+		#print toporef[j]
 		gold_lat = float(toporef[j][2]['lat'])
 		gold_long = float(toporef[j][2]['long'])
 		
@@ -610,7 +618,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		totaldict = Counter()
 		contrib_dict = {}
 		#print toporef[j][1], gold_lat, gold_long
-		for word[0] in contextlist:
+		for word in contextlist:
 			if word[0] not in stopwords:
 				table = getCorrectTable(word[0], tab1, tab2, tab3)
 				#table = stat_tbl
@@ -640,10 +648,10 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 
 					#ranked_fetch = sorted(adict3.items(), key=itemgetter(1), reverse=True)
 					#subset_ranked = dict(ranked_fetch[:int(len(ranked_fetch)*percentile)])
-					for gid in adict3:
-						#print gid
-						contrib_dict.setdefault(gid, list()).append([word[0], adict3[gid]])
-						#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
+					#for gid in adict3:
+					#	#print gid
+					#	contrib_dict.setdefault(gid, list()).append([word[0], adict3[gid]])
+					#	#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
 					#print word, ranked_fetch[:5]
 					totaldict += Counter(adict3)
 		#print totaldict
@@ -653,8 +661,8 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		#ranked_contrib = sorted(contrib_dict.items(), key=itemgetter(1), reverse=True)
 		for t in sorted_total:
 			y += 1 
-			contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
-			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], math.fabs(lat_long_lookup[t[0]][0]-gold_lat)+math.fabs(lat_long_lookup[t[0]][1]-gold_long), contrib_sub[:5]]
+			#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
+			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], math.fabs(lat_long_lookup[t[0]][0]-gold_lat)+math.fabs(lat_long_lookup[t[0]][1]-gold_long)]
 
 		#print sorted_total[:20]
 		y = 0
@@ -674,7 +682,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				if len(gazet_entry) > 0:
 					#print "Gazet Entry: ", gazet_entry
 					if len(gazet_entry) == 1:
-						print "Executing Distance SQL for ", gazet_entry
+						#print "Executing Distance SQL for ", gazet_entry
 						gid = int(gazet_entry[0][1])
 						tbl = gazet_entry[0][0]
 						name = gazet_entry[0][2]
@@ -856,3 +864,26 @@ def GetGazets_DistLimited(cur, placenames, latlong, country_tbl, region_tbl, sta
 def combine_tuples(t1, t2):
 	tsum = t1[1] + t2[1]
 	return (t1[0], tsum)
+
+out_domain_stat_tbl = ""
+in_domain_stat_tbl = "None"
+conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
+tst_tbl = "cwar_test"
+gtbl = "globalgrid_5_clip_geog"
+window = 15
+percentile = 1.0
+country_tbl = "countries_2012"
+region_tbl = "regions_2012"
+state_tbl = "states_2012"
+geonames_tbl = "geonames_all"
+main_topo_weight = 40.0
+other_topo_weight = 1.0
+other_word_weight = 0.5
+in_corp_lamb = 0.0
+out_corp_lamb = 1.0
+#test_xml = "/home/grant/Downloads/LGL/articles/dev_classicxml"
+test_xml = "/home/grant/devel/TopCluster/cwar/cwar/xml/test_split"
+results_file = "Cwar_test_Predictions_Lambda0.txt"
+
+calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
+	region_tbl, state_tbl, geonames_tbl, tst_tbl, in_corp_lamb, out_corp_lamb, results_file)

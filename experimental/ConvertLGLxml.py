@@ -78,7 +78,7 @@ def parse_xml(afile):
 									toporefs.append([did, art_title, art_domain, start, end, phrase, lat, lon])
 									#print toporefs[-1]
 					#sys.exit()
-			wordref, i, toporef = getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art_title)
+			wordref, i, toporef = getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art_title, art_domain)
 
 
 	return toporef, wordref
@@ -86,8 +86,9 @@ def parse_xml(afile):
 def CreateXML(out_dir, xml, toporef, wordref):
 	docs_written = []
 	for i in sorted(wordref.keys()):
-		did = wordref[i][-3]
-		art_title = wordref[i][-2]
+		did = wordref[i][-4]
+		art_title = wordref[i][-3]
+		art_domain = wordref[i][-1]
 		tok = wordref[i][2]
 		if did not in docs_written:
 			if len(docs_written) > 0:
@@ -96,10 +97,10 @@ def CreateXML(out_dir, xml, toporef, wordref):
 				outfile.close()
 			outfile = io.open(out_dir+'/'+xml+'_'+did+'.xml', 'w', encoding='utf-8')
 			outfile.write(u'<?xml version="1.0" encoding="utf-8"?>'+'\r\n')
-			outfile.write(u'<doc id="'+did +u'" title="' + html_escape(art_title) + u'">'+'\r\n')
+			outfile.write(u'<doc id="'+did +u'" title="' + html_escape(art_title) + u'" domain="' + html_escape(art_domain)  + u'">'+'\r\n')
 			outfile.write(u'<s id="s1">' + '\r\n')
 			docs_written.append(did)
-		if wordref[i][-1] == False:	
+		if wordref[i][-2] == False:	
 			outfile.write(u'<w tok="' + html_escape(tok) + u'"/>' + '\r\n')
 		else:
 			lat = toporef[i][1]['lat']
@@ -166,7 +167,7 @@ def parse_xml2(afile):
 
 
 
-def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art_title):
+def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art_title, domain):
 	span = 0
 	#print art_text
 	sents = sent_detector.tokenize(art_text)
@@ -187,7 +188,7 @@ def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art
 			#print start_span+len(tok)
 			#print art_text[start_span:(start_span+len(tok))].strip()
 			if Between(start_span, se_pairs) == "-99":
-				wordref[i] = [start_span, start_span+len(tok), tok, did, art_title, False]
+				wordref[i] = [start_span, start_span+len(tok), tok, did, art_title, False, domain]
 				#print tok
 				#print i
 			else:
@@ -195,8 +196,8 @@ def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art
 					t3 = Between(start_span, se_pairs)
 					#print t3[5]
 					#print i
-					wordref[i] = [t3[3], t3[4], t3[5], did, art_title, True]
-					toporef[i] = [t3[5], {'did':t3[0], 'start':t3[3], 'lat':t3[6], 'lon':t3[7]}]
+					wordref[i] = [t3[3], t3[4], t3[5], did, art_title, True, domain]
+					toporef[i] = [t3[5], {'did':t3[0], 'start':t3[3], 'lat':t3[6], 'lon':t3[7]}, domain]
 				else:
 					i = i - 1
 			#start_end[did+'_'+start_span)] = [i, tok]
@@ -262,7 +263,7 @@ def updateInPlace(a,b):
 
 def calc(test_xml):
 
-	out_dir = "/home/grant/Downloads/LGL/articles/test_classicxml"
+	out_dir = "/home/grant/Downloads/LGL/articles/dev_classicxml"
 	if os.path.isdir(test_xml) == True:
 		print "Reading as directory"
 		files = os.listdir(test_xml)
@@ -273,5 +274,5 @@ def calc(test_xml):
 			toporef, wordref = parse_xml(test_xml+'/'+xml)
 			CreateXML(out_dir, xml, toporef, wordref)
 
-test_xml = "/home/grant/Downloads/LGL/articles/test"
+test_xml = "/home/grant/Downloads/LGL/articles/dev"
 calc(test_xml)

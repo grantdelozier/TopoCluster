@@ -48,11 +48,11 @@ def CreateTrainDev(in_direct, out_direct_train, out_direct_test, train_ratio, te
 
 	#Create Pseudo-Documents from Toponyms
 	import PseudoDocCreator as PSD
-	PSD.calc(out_direct_train, train_doc_file, 100, file_type)
+	#PSD.calc(out_direct_train, train_doc_file, 100, file_type)
 
 	#Create Document Table
 	import LoadDBV1 as LDB
-	LDB.Load(train_doc_file, out_train_tbl, conn_info, "wiki")
+	#LDB.Load(train_doc_file, out_train_tbl, conn_info, "wiki")
 
 	#Calc Local Stats Tables
 	import LocalSpatialStatsV1 as LS
@@ -63,7 +63,7 @@ def CreateTrainDev(in_direct, out_direct_train, out_direct_test, train_ratio, te
 	return train_tbl, out_direct_test
 
 mode = "lgl"
-outfile = "LGL_theta_Results_2nd.txt"
+outfile = "LGL_theta_Results_devsplit3.txt"
 out_domain_stat_tbl = ""
 conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
 gtbl = "globalgrid_5_clip_geog"
@@ -78,24 +78,24 @@ geonames_tbl = "geonames_all"
 if mode == "trconll":
 
 	########Optimize for TR-CoNLL###########
-	import TestResolver_TRCONLL_allits as TR
+	import TestResolver_TRCONLL_allits_Thetas as TR
 	tst_tbl = "trconllf_dev"
 
-	lamb_wiki = 0.0
-	lamb_trconll = 1.0
+	lamb_wiki = 0.9
+	lamb_trconll = 0.1
 
 	in_direct = "/home/grant/devel/TopCluster/trconllf/xml/dev"
-	out_direct_train = "/home/grant/devel/TopCluster/trconllf/xml/dev_trainsplit4"
-	out_direct_test = "/home/grant/devel/TopCluster/trconllf/xml/dev_testsplit4"
+	out_direct_train = "/home/grant/devel/TopCluster/trconllf/xml/dev_trainsplit1"
+	out_direct_test = "/home/grant/devel/TopCluster/trconllf/xml/dev_testsplit1"
 	train_ratio = .80
 	test_ratio = .20
-	train_doc_file = "/home/grant/devel/TopCluster/trconllf/dev_trainsplit4_docfile.txt"
-	out_train_tbl = "trconllf_dev_trainsplit4"
+	#train_doc_file = "/home/grant/devel/TopCluster/trconllf/dev_trainsplit2_docfile.txt"
+	out_train_tbl = "trconllf_dev_trainsplit1"
 
 
 	it_size = 0.1
-	train_tbl = "trconllf_dev_trainsplit4_kernel100k_epanech_gi"
-	test_xml = "/home/grant/devel/TopCluster/trconllf/xml/dev_testsplit4"
+	train_tbl = "trconllf_dev_trainsplit1_kernel100k_epanech_gi"
+	test_xml = "/home/grant/devel/TopCluster/trconllf/xml/dev_testsplit1"
 	#train_tbl, test_xml = CreateTrainDev(in_direct, out_direct_train, out_direct_test, train_ratio, test_ratio, train_doc_file, out_train_tbl)
 
 
@@ -140,17 +140,18 @@ if mode == "lgl":
 
 	in_direct = "/home/grant/Downloads/LGL/articles/dev_classicxml"
 	#out_direct_train = "/home/grant/devel/TopCluster/cwar/cwar/xml/dev_trainsplit1"
-	out_direct_train = "/home/grant/Downloads/LGL/articles/dev_trainsplit1"
-	out_direct_test = "/home/grant/Downloads/LGL/articles/dev_testsplit1"
+	out_direct_train = "/home/grant/Downloads/LGL/articles/dev_trainsplit3" 
+	out_direct_test = "/home/grant/Downloads/LGL/articles/dev_testsplit3"
 	train_ratio = .80
 	test_ratio = .20
-	train_doc_file = "/home/grant/Downloads/LGL/dev_trainsplit1_docfile.txt"
-	out_train_tbl = "lgl_dev_trainsplit1"
+	train_doc_file = "/home/grant/Downloads/LGL/dev_trainsplit3_docfile.txt"
+	out_train_tbl = "lgl_dev_trainsplit2"
 
 
 	#it_size = 0.1
-	train_tbl = "lgl_dev_trainsplit1_kernel100k_epanech_gi"
-	test_xml = "/home/grant/Downloads/LGL/articles/dev_testsplit1"
+	train_tbl = "lgl_dev_trainsplit3_kernel100k_epanech_gi"
+	test_xml = "/home/grant/Downloads/LGL/articles/dev_testsplit3"
 	#train_tbl, test_xml = CreateTrainDev(in_direct, out_direct_train, out_direct_test, train_ratio, test_ratio, train_doc_file, out_train_tbl)
-		
+	print "Done generating statistics tables"	
+	
 	TR.calc(train_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, lamb_lgl, lamb_wiki, outfile)

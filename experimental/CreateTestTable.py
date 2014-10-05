@@ -168,8 +168,8 @@ def calc(test_xml, conn_info, gtbl, out_tbl):
 
 conn_info = "dbname=topodb user=postgres host='localhost' port='5433' password='grant'"
 gtbl = "globalgrid_5_clip_geog"
-out_tbl = "lgl_dev_classic"
-in_dir = "/home/grant/Downloads/LGL/articles/dev_classicxml"
+out_tbl = "lgl_test_classic"
+in_dir = "/home/grant/Downloads/LGL/articles/test_classicxml"
 #in_dir = "/home/grant/devel/TopCluster/cwar/cwar/xml/dev"
 calc(in_dir, conn_info, gtbl, out_tbl)
 print "Done"
