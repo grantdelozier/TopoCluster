@@ -113,8 +113,9 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
-def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile, main_topo_weight, other_topo_weight, other_word_weight, country_tbl, 
-	region_tbl, state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, results_file, stan_path):
+def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile,
+		 main_topo_weight, other_topo_weight, other_word_weight, country_tbl, region_tbl,
+		 state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, results_file, stan_path):
 	print "In Domain Local Statistics Table Name: ", in_domain_stat_tbl
 	print "Out of domain Local Statistics Table Name: ", out_domain_stat_tbl
 	print "Directory Path containing plain text files to be parsed: ", test_xml
@@ -289,7 +290,6 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 					toponym = p[0].decode('utf-8')
 				if isinstance(p[0], unicode):
 					toponym = p[0].encode('utf-8').decode('utf-8')
-				print p[1]
 				#The encoding of the toponym name from the table can change based on the table results were pulled from
 				if isinstance(p[6], str):
 					table_toponym = p[6].decode('utf-8')
@@ -300,6 +300,8 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 	end_time = datetime.datetime.now()
 
+	print total_topo
+	print "Check File @ ", results_file
 	print "Total Time: ", end_time - start_time
 
 #This function evaluates a word to see which out of domain table should be queries to obtain the Gi* vector
@@ -317,21 +319,11 @@ def getCorrectTable(word, tab1, tab2, tab3):
 			table = 'enwiki20130102_ner_final_other'
 	return table
 
-#from collections import defaultdict
-
-#Merge a list of Gi* dictionaries stogether, summing values
-def merge4(dicts):
-	merged = {}
-	for d in dicts:
-		for k in d:
-			merged[k] = merged.get(k, 0.0) + d[k]
-	return merged
-
 #Performs actual disambiguation work based on summing Gi* vectors of words in a context window
 def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, 
 	other_word_weight, plaintext_file, predictions, country_tbl, region_tbl, state_tbl,
-	geonames_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb):
-	
+	geonames_tbl, country_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb): 
+
 	#Lists of alphabetic characters that help system decide which table partition to query in later steps
 	tab1 = [chr(item) for item in range(ord('a'), ord('i')+1)]
 	tab2 = [chr(item) for item in range(ord('j'), ord('s')+1)]
@@ -370,9 +362,13 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		
 		totaldict = Counter()
 		contrib_dict = {}
+
+		BaseQuery = "SELECT u1.gid::integer, sum(u1.stat) FROM ( "
+
+		wordlist = []
+
 		for word in contextlist:
 			if word[0] not in stopwords:
-				#Returns one of four table names pertaining to the correct GeoWikipedia Gi* Stat Table Partition
 				table = getCorrectTable(word[0], tab1, tab2, tab3)
 				if len(table) > 0:
 					#Apply different weights to the Gi* vectors of different types of words
@@ -383,43 +379,38 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 					elif word[1] == "Word":
 						weight = other_word_weight
  					else: weight = 1.0
-					
-					#Query the out of domain Gi* table for statistic values
-					SQL = "Select gid, stat FROM %s WHERE word = %s ;" % (table, '%s')
-					cur.execute(SQL, (word[0], ))
-					adict =  dict([(int(k), weight * out_corp_lamb * float(v)) for k, v in cur.fetchall()])
-					
 
-					if in_domain_stat_tbl != "None":
-						#Query the in domain Gi* table for statistic values
-						SQL2 = "Select gid, stat FROM %s WHERE word = %s ;" % (in_domain_stat_tbl, '%s')
-						cur.execute(SQL2, (word[0], ))
-						adict2 =  dict([(int(k), weight * in_corp_lamb * float(v)) for k, v in cur.fetchall()])
-					else: adict2 = {}
+ 					wordlist.append(word[0])
 
-					adict3 = merge4([adict, adict2])
-					#adict3 = dict([(k, v) for k, v in dict(Counter(adict)+Counter(adict2)).items()])
-					ranked_fetch = sorted(adict3.items(), key=itemgetter(1), reverse=True)
-					subset_ranked = dict(ranked_fetch[:int(len(ranked_fetch)*percentile)])
-					for gid in subset_ranked:
-						#print gid
-						contrib_dict.setdefault(gid, list()).append([word[0], subset_ranked[gid]])
-						#contrib_dict[gid] = combine_tuples(contrib_dict.get(gid, (word, 0.0)), gid)
-					#print word, ranked_fetch[:5]
-					totaldict += Counter(subset_ranked)
-		#print totaldict
-		sorted_total = sorted(totaldict.items(), key=itemgetter(1), reverse=True)
+ 					if len(wordlist) == 1:
+ 						Nested_Select = "SELECT gid, word, stat * %s * %s as stat FROM %s where %s.word = %s " % (str(weight), str(out_corp_lamb), table, table, '%s')
+ 					else:
+ 						Nested_Select = "\r\n UNION \r\n SELECT gid, word, stat * %s * %s as stat FROM %s where %s.word = %s " % (str(weight), str(out_corp_lamb), table, table, '%s')
+
+ 					if in_domain_stat_tbl != "None":
+ 						Nested_Select = Nested_Select + "\r\n UNION \r\n SELECT gid, word, stat * %s * %s as stat FROM %s where %s.word = %s " % (str(weight), str(in_corp_lamb), in_domain_stat_tbl, in_domain_stat_tbl, '%s')
+
+ 					BaseQuery = BaseQuery + Nested_Select
+ 		QueryEnd = ") as u1 Group by gid Order by sum(u1.stat) desc;"
+
+		TotalQuery = BaseQuery + QueryEnd
+		#print TotalQuery
+		#print wordlist
+		cur.execute(TotalQuery, wordlist)
+
+		sorted_total = cur.fetchall()
+
 		y = 0
 		rank_dict = {}
 		#ranked_contrib = sorted(contrib_dict.items(), key=itemgetter(1), reverse=True)
 		for t in sorted_total:
 			y += 1 
-			contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
-			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]], contrib_sub[:5]]
+			#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
+			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]]]
 
-		#print sorted_total[:20]
 		y = 0
-		for i in sorted_total[:20]:
+
+		for i in sorted_total[:5]:
 			y += 1
 			#print rank_dict[i[0]]
 			if y == 1:
@@ -583,9 +574,6 @@ def GetGazets_DistLimited(cur, placenames, latlong, country_tbl, region_tbl, sta
 		ranked_gazet = sorted(gazet_entry, key=itemgetter(3), reverse=False)
 		return [ranked_gazet[0]]
 	return gazet_entry
-
-
-
 
 def combine_tuples(t1, t2):
 	tsum = t1[1] + t2[1]
