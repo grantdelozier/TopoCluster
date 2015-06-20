@@ -367,12 +367,13 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 			topobase = topobase.title()
 
 		#Change acronyms with periods into regular acronyms
-		if "." in topobase and ". " not in topobase.strip():
-			combinedtokens = ""
-			for token in topobase.split("."):
-				combinedtokens = combinedtokens + token
-			topotokens.append(combinedtokens)
-			contextlist.append([combinedtokens, "MainTopo", 0])
+		if ". " not in topobase.strip():
+			no_period_topobase = re.sub(r"\b([A-Z])\.", r"\1", topobase)
+			if topobase != no_period_topobase:
+				topotokens.append(no_period_topobase)
+				contextlist.append([no_period_topobase, "MainTopo", 0])
+			else:
+				topotokens.append(topobase)
 		else: topotokens.append(topobase)
 
 		gazet_topos = topotokens
