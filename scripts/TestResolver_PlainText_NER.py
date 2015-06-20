@@ -3,8 +3,8 @@ import os
 
 import io
 import psycopg2
-import xml.etree.ElementTree as ET
-from lxml import etree
+#import xml.etree.ElementTree as ET
+#from lxml import etree
 import math
 
 from collections import Counter
@@ -239,18 +239,19 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		for plaintext in files:
 			m += 1
 			print plaintext
-			#Change this... it will break on non unix systems
-			filename = test_xml+'/'+plaintext
-			outxml = "neroutputs/ner_" + plaintext
+			filename = os.path.join(test_xml, plaintext)
+			outxml = "ner_" + plaintext
 			#Catch errors from the Stanford NER. Doesn't always succeed in parsing files. 
 			try: 
 				NER.calc(stan_path, filename, outxml)
 				toporef, wordref = NER.readnerxml(outxml)
+				os.remove(outxml)
 			except:
 				print "Problem using the Stanford Parser for this file, skipping"
 				print plaintext
 				toporef = {}
 				wordref = {}
+
 
 			print "Files left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
