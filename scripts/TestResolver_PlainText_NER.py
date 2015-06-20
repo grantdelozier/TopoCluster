@@ -15,6 +15,7 @@ import datetime
 import collections
 
 import UnicodeBlocks
+import re
 
 #For use with Tr-ConLL
 
