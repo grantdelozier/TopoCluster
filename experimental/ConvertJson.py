@@ -2,6 +2,15 @@ import sys
 import os
 import json
 
+import sys
+oldpaths = sys.path
+#sys.path = ['/Library/Frameworks/GDAL.framework/Versions/1.11/Python']
+sys.path = ['/Library/Frameworks/GDAL.framework/Versions/1.11/Python/2.7/site-packages']
+sys.path.extend(oldpaths)
+
+from osgeo import gdal
+print gdal.__version__
+
 
 import psycopg2
 import xml.etree.ElementTree as ET
@@ -60,10 +69,11 @@ def parse_json(afile):
 						centroid = geom.Centroid()
 						print name
 						print centroid
-						lat = centroid[0]
-						lon = centroid[1]
+						lat = str(centroid.GetY())
+						lon = str(centroid.GetX())
 					toporefs.append([did, vol, 'wotr', char_start, char_end, name, lat, lon, geojson])
 		wordref, i, toporef = getContext2(text, wordref, i, toporefs, toporef, sent_detector, did, vol, 'wotr')
+	return toporef, wordref
 
 def parse_xml(afile):
 	#print afile
@@ -124,8 +134,13 @@ def parse_xml(afile):
 
 	return toporef, wordref
 
-def CreateXML(out_dir, xml, toporef, wordref):
+def CreateXML(out_dir, json_name, toporef, wordref):
 	docs_written = []
+	print json_name
+	if '.json' in json_name:
+		rindex = json.rfind('/')
+		outname = json_name[rindex:-5]
+		print outname
 	for i in sorted(wordref.keys()):
 		did = wordref[i][-4]
 		art_title = wordref[i][-3]
@@ -136,7 +151,7 @@ def CreateXML(out_dir, xml, toporef, wordref):
 				outfile.write(u'</s>' + '\r\n')
 				outfile.write(u'</doc>'+'\r\n')
 				outfile.close()
-			outfile = io.open(out_dir+'/'+xml+'_'+did+'.xml', 'w', encoding='utf-8')
+			outfile = io.open(os.path.join(out_dir, outname+'-'+did+'.xml'), 'w', encoding='utf-8')
 			outfile.write(u'<?xml version="1.0" encoding="utf-8"?>'+'\r\n')
 			outfile.write(u'<doc id="'+did +u'" title="' + html_escape(art_title) + u'" domain="' + html_escape(art_domain)  + u'">'+'\r\n')
 			outfile.write(u'<s id="s1">' + '\r\n')
@@ -218,9 +233,19 @@ def getContext2(art_text, wordref, i, toporefs, toporef, sent_detector, did, art
 		tokens = nltk.word_tokenize(s)
 		#print tokens
 		#print s
+		#print s
 		for tok in tokens:
-			i+= 1
-			start_span = span + art_text[span:].index(tok)
+			i+= 1 
+			if tok == "``" or tok == "''":
+				tok = '"'
+			#print tok
+			try:
+				start_span = span + art_text[span:].index(tok)
+			except:
+				print "Broken"
+				print s
+				print tok
+				sys.exit()
 			span += len(tok)
 			#end_span = span
 			#print tok
@@ -304,9 +329,10 @@ def updateInPlace(a,b):
 
 def calc(json_file):
 
-	out_dir = "/Users/grant/devel/GeoAnnotate"
+	out_dir = "/Users/grant/devel/corpora/wotr-topo-classicxml/train"
 	toporef, wordref = parse_json(json_file)
-	CreateXML(out_dir, xml, toporef, wordref)
+	#with io.open(outfile, 'w', encoding='utf-8') as w:
+	CreateXML(out_dir, json_file, toporef, wordref)
 
-json_file = "/Users/grant/devel/GeoAnnotate/wotr-topo-test.json"
+json_file = "/Users/grant/devel/GeoAnnotate/wotr-topo-train.json"
 calc(json_file)
