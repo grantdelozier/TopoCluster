@@ -112,45 +112,12 @@ Argument Explanation:
 * -dtbl (name of the table that will be created in ones DB. upper case letters and spaces should not be used. if the table name already exists in the DB its contents will be erased prior to row insertion)
 * -conn (a string corresponding to psycopg2 connection information. In the future this argument will be removed altogether in favor of a .config file with this information)
 
-### Calculate Moran's Coefficient
-
-Use of this mode requires installation of Python's Numpy/Scipy packages.
-
-(Remove returns between arguments)
-```
-python TopoCluster.py 
--mode morans_calc 
--tf /directory/wikipedia_training.data.txt 
--traintype wiki 
--dtbl wikipedia_geography
--gtbl globalgrid_5_clip
--conn "dbname=mydbname user=myusername host='localhost' password=' '"
--agg_dist 40000
--kern_dist 90000
--kern_type uniform
--write_agg_lm False
--grid_freq_min 5
--outf MoransScores_Uniform_40kmAgg_90kmNeighbor_wikipedia_training.data.txt
--cores 2
-```
-
-Argument Explanation:
-* -tf (accepts a string that points to a training file, it should have schema like the sample training data provided with this repository)
-* -traintype (accepts wiki or twitter as arguments. these datasets have slightly different schema so this is necessary)
-* -dtbl (name of the table containing -tf document geographies)
-* -gtbl (name of the grid table from which aggregations will be made)
-* -conn (a string corresponding to psycopg2 connection information. In the future this argument will be removed altogether in favor of a .config file with this information)
-* -agg_dist (the distance (in meters) around a grid point from which documents will be aggregated.)
-* -kern_dist (the distance (in meters) that defines the bandwidth of the kernel function)
-* -kern_type (type of kernel function to be used for target to neighbor comparisons. Currently supports only uniform for Moran's Calculations)
-* -write_agg_lm (if set to True it will write the aggregated document language models to a file.)
-* -grid_freq_min (a minimum number of different aggregated documents a word must be inside before its Moran's Coef is bothered to be calculated)
-* -outf (a text file that moran's coeficients will be written to)
-* -cores (the number of cores to utilize for Moran's calculations. The moran's calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus.)
 
 ### Calculate Local Spatial Statistics
 
-Use of this mode requires Numpy to be installed. This mode takes in a document training file and outputs local spatial statistics to a PostgreSQL table.
+Use this mode if you want to train on your own data. Training data must be in the same format as data/wiki_training_file_sample.txt
+
+This mode requires Numpy to be installed. This mode takes in a document training file and document geography table and outputs local spatial statistics to a PostgreSQL table.
 
 (Remove returns between arguments)
 ```
@@ -181,6 +148,10 @@ Argument Explanation:
 * -statistic (type of local spatial statistic to calculate. Currently accepts zavg and gi as arguments)
 * -out_tbl (table to which local statistic results will be written to. If a table already exists then it will have its previous contents deleted prior to insertion. Right now there is a limit to the character length of words that can be inserted (50 charvar).)
 * -cores (the number of cores to utilize for local statistic calculations. The local statistic calculations are capable of utilizing Python multiprocessing. Appropriate use of the cores argument requires some knowledge of the base memory consumption of the process on your training data. Generally the bottlenecks are in memory and not in the number of cpus. It is recommended to leave 1/2 the number of cores open so that they can be devoted to postgreSQL processes that will be spawned.)
+
+### Testing on your own corpus
+
+Fill in this section
 
 ### Resolve Toponyms (Plain Text with NER)
 
