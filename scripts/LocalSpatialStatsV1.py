@@ -216,11 +216,10 @@ def ZavgCalc(x):
         
 
 ###Main Method###
-def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, traintype, listuse, whitelist_file, grid_freq_min, cores, include_zero):
+def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype, listuse, whitelist_file, grid_freq_min, cores, include_zero):
     print "Local Spatial Statistics Parameters"
     print "Train file: ", f
     print "Document Table Name: ", dtbl
-    print "Document type: ", traintype
     print "Grid Table Name: ", gtbl
     print "Connection Information: ", conn_info
     print "Local Statistic Outfile Name: ", outf
@@ -257,6 +256,8 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
 
     whitelist = set()
 
+    #If listuse is set to restricted will attempt to read a file with acceptable words
+    #words in file should be newline delimited
     if listuse == 'restricted':
         F_All = set()
         with io.open(whitelist_file, 'r', encoding='utf-8') as w:
@@ -265,59 +266,33 @@ def calc(f, statistic, dtbl, gtbl, conn_info, outf, out_tbl, kern_dist, kerntype
         print "Num Words in whitelist: ", len(whitelist)
 
     #Read in the trainfile data/calc word frequencies
+    #Format should be tab delimited where cols are:
+    #ID\tPage_name\tComma_Delimited_Lat_Long\tSpace_Delimited_Word_Counts
+    #Space Delimited Word Counts should look like:
+    #New|York:3 Jets:5 New|York|City:2
+    #If multi-word included in counts replace space with horizontal bar '|' prior to training
+    #Will attempt to decode the file from utf-8 encoding
     with io.open(f, 'r', encoding='utf-8') as f:
         for person in f:
             #print "####NEW Person####"
             #print userID, latit, longit
-            #try:
             row = person.strip().split('\t')
-            #print row[0]
 
-            if traintype == "twitter":
-                #print row[0]
-                userID = row[0]
-                latit = row[1].split(',')[0]
-                longit = row[1].split(',')[1]
-                if UseAggLMs == False:
-                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[-1].split(" "))
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
-                    docDict[userID] = newDoc.Feature_Prob
-                elif UseAggLMs == True:
-                    F_Freq = dict([f.split(':')[0],float(f.split(':')[1])] for f in row[-1].split(" "))
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    docDict[userID] = F_Freq
-            elif traintype == "wiki":
-                userID = row[0]
-                page_name = row[1]
-                latit = row[2].split(',')[0]
-                longit = row[2].split(',')[1]
-                #print userID
-                if UseAggLMs == False:
-                    F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[-1].split(" "))
-                    #F_All |= set(F_Freq.keys())
-                    newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
-                    if listuse == 'any':
-                        F_All |= set(F_Freq.keys())
-                    if listuse == 'restricted':
-                        F_All |= set([j for j in F_Freq if j in whitelist])
-                    docDict[newDoc.userID] = newDoc.Feature_Prob
-                if UseAggLMs == True:
-                    print "Use Agg LM mode for wikipedia dataset not implemented"
-                    sys.exit("Error")
-            #except:
-            #    print "@@@@@error reading user@@@@@@"
-            #    print row
-            #    print z
-            #    #sys.exit("Error")
+            userID = row[0]
+            page_name = row[1]
+            latit = row[2].split(',')[0]
+            longit = row[2].split(',')[1]
+            #print userID
+            if UseAggLMs == False:
+                F_Freq = dict([f.split(':')[0],int(f.split(':')[1])] for f in row[-1].split(" "))
+                newDoc = Document(userID, latit, longit, F_Freq, filename, listuse, whitelist)
+                if listuse == 'any':
+                    F_All |= set(F_Freq.keys())
+                if listuse == 'restricted':
+                    F_All |= set([j for j in F_Freq if j in whitelist])
+                docDict[newDoc.userID] = newDoc.Feature_Prob
             z += 1
-            if z % 5000 == 0:
+            if z % 10000 == 0:
                 print z
                 print datetime.datetime.now()
 
