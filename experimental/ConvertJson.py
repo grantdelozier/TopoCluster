@@ -2,6 +2,8 @@ import sys
 import os
 import json
 
+#Extremely hacky method for adding correct GDAL to path.
+#Usually isn't necessary but if you have a GIS installed using a diff GDAL then this is necessary
 import sys
 oldpaths = sys.path
 #sys.path = ['/Library/Frameworks/GDAL.framework/Versions/1.11/Python']
@@ -9,7 +11,7 @@ sys.path = ['/Library/Frameworks/GDAL.framework/Versions/1.11/Python/2.7/site-pa
 sys.path.extend(oldpaths)
 
 from osgeo import gdal
-print gdal.__version__
+print "gdal", gdal.__version__
 
 
 import psycopg2
@@ -138,9 +140,10 @@ def CreateXML(out_dir, json_name, toporef, wordref):
 	docs_written = []
 	print json_name
 	if '.json' in json_name:
-		rindex = json.rfind('/')
-		outname = json_name[rindex:-5]
+		rindex = json_name.rfind('/')
+		outname = json_name[rindex+1:-5]
 		print outname
+		print os.path.join(out_dir, outname+'-'+'somedid'+'.xml')
 	for i in sorted(wordref.keys()):
 		did = wordref[i][-4]
 		art_title = wordref[i][-3]
@@ -163,7 +166,11 @@ def CreateXML(out_dir, json_name, toporef, wordref):
 			lon = toporef[i][1]['lon']
 			outfile.write(u'<toponym term="' + html_escape(tok)  + '">' + '\r\n')
 			outfile.write(u'<candidates>'+'\r\n')
-			outfile.write(u'<cand lat="' + lat + '" long="' + lon +u'" selected="yes"'  +u'/>' +'\r\n')
+			if lat != 'NA' and lon != 'NA':
+				outfile.write(u'<cand lat="' + lat + '" long="' + lon +u'" selected="yes"'  +u'/>' +'\r\n')
+			else:
+				pass
+				#outfile.write(u'<cand lat="' + lat + '" long="' + lon +u'" '  +u'/>' +'\r\n')
 			outfile.write(u'</candidates>'+ '\r\n')
 			outfile.write(u'</toponym>'+'\r\n')
 	outfile.write(u'</s>' + '\r\n')		
