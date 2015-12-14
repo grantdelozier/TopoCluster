@@ -270,6 +270,67 @@ if len(sys.argv) >= 3 and "--help" not in sys.argv:
 
         JS.calc(stat_tbl, synfile, conn_info, pct, randits, outf, stat_tbl_func)
 
+   ###################Test Toponym Resolver on XML###################
+   if mode_arg.lower() = "test_xml":
+    try:
+        try:
+            in_domain_stat_tbl = args[args.index("-indomain_stat_tbl")+1]
+        except:
+            print "You did not provide a name for an in domain statistics table to use"
+            print "Defaulting to None"
+            in_domain_stat_tbl = "None"
+            #sys.exit("Error")
+            
+        #Statistics Table (Zavg/Gi*) for out of domain statistics
+        try:
+            out_domain_stat_tbl = args[args.index("-outdomain_stat_tbl")+1]
+        except:
+            print "You did not provide a name for an out of domain statistics table to use"
+            print "Defaulting to None"
+            out_domain_stat_tbl = "None"
+            if in_domain_stat_tbl == "None" and out_domain_stat_tbl == "None":
+                print "Error:"
+                print "You provided neither an in domain or out of domain stat table"
+                sys.exit("Error")       
+        #Lambda weight applied to Gi* vectors from the in domain statistics table
+        try:
+            in_domain_lambda = args[args.index("-in_domain_lambda")+1]
+        except:
+            print ""
+            print "You did not provide a value for in domain lambda, defaulting to 0.0"
+            print ""
+            in_domain_lambda = 0.0
+
+        try:
+            out_domain_lambda = args[args.index("-out_domain_lambda")+1]
+        except:
+            print ""
+            print "You did not provide a value for out domain lambda, defaulting to 0.0"
+            print ""
+            out_domain_lambda = 0.0
+            if float(in_domain_lambda) == 0.0 and float(out_domain_lambda) == 0.0:
+                print "Error:"
+                print "A value of 0.0 was provided for both -in_domain_lambda and -out_domain_lambda"
+                sys.exit("Error")
+
+        #tst file
+        try: 
+            f = args[args.index("-tstf")+1]
+        except:
+            print "Error:"
+            print "test file directory not given (-tstf)"
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        import TestResolver_XML
+
+        TestResolver_XML.calc(in_domain_stat_tbl, out_domain_stat_tbl, f, conn_info)
+
    ###################Test Toponym Resolver#####################
    #Only used to test annotated datasets of TRCONLL, LGL, CWar
     if mode_arg.lower() == "topo_test":
