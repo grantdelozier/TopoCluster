@@ -90,9 +90,25 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			#Assumes tr-conll xml format
 			toporef, wordref = parse_xml(os.path.join(test_xml, xml))
 
-			predictions, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
+			point_error, poly_error, total_topo, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
 										percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, plaintext, predictions, country_tbl, region_tbl, state_tbl,
 	 									geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb)
+		point_dist_list.sort()
+		poly_dist_list.sort()
+
+		print "=============RESULTS================"
+		print "Total Toponyms: ", total_topo
+		print "Window: ", window
+		print "Percentile: ", percentile
+		print "Main Topo weight:", main_topo_weight
+		print "Other Topo weight:", other_topo_weight
+		print "Other word weight:", other_word_weight
+		print "Point Average Error Distance @ 1: ", ((float(point_error_sum)/float(total_topo)))
+		print "Point Median Error Distance @ 1: ", point_dist_list[total_topo/2]
+		print "Point Accuracy @ 161km : ", float(point_total_correct) / float(total_topo)
+		print "Polygon (GAZET) Average Error Distance @ 1: ", ((float(poly_error_sum)/float(total_topo)))
+		print "Polygon (GAZET) Median Error Distance @ 1: ", poly_dist_list[total_topo/2]
+		print "Polygon (GAZET) Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
 
 #Performs actual disambiguation work based on summing Gi* vectors of words in a context window
 def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, window, stopwords, main_topo_weight, other_topo_weight, 
@@ -140,6 +156,9 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		totaldict = Counter()
 		contrib_dict = {}
 		wordlist = []
+
+		gold_lat = float(toporef[j][1]['lat'])
+		gold_long = float(toporef[j][1]['long'])
 
 		BaseQuery = "SELECT u1.gid::integer, sum(u1.stat) FROM ( "
 
@@ -204,21 +223,50 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 					if len(gazet_entry) == 1:
 						#print "Executing Distance SQL for ", gazet_entry
 						gid = int(gazet_entry[0][1])
-						tbl = gazet_entry[0][0]
+						tbl = gazet_entry[0][0] #Gazet Table
 						name = gazet_entry[0][2]
 						centroid_lat = gazet_entry[0][3]
 						centroid_long = gazet_entry[0][4]
-						predictions.append([toporef[j], plaintext_file, j, "GAZET", tbl, gid, name, centroid_lat, centroid_long ] )
+						predictions.append([toporef[j], plaintext_file, j, "GAZET", tbl, gid, name, centroid_lat, centroid_long, gold_lat, gold_long ] )
+						SQL_dist = "SELECT ST_Distance(ST_GeographyFromText('SRID=4326;POINT(%s %s)'), p2.geog) FROM %s as p2 WHERE p2.gid = %s;" % (gold_long, gold_lat, tbl, '%s')
+						#SQL_Poly_dist = "SELECT ST_Distance(p1.polygeog, p2.geog) FROM trconllf as p1, %s as p2 WHERE p1.placename = %s and p1.docname = %s and p2.gid = %s;" % (tbl, '%s', '%s', '%s')
+						#cur.execute(SQL_Point_dist, (toporef[j][0], xml, gid))
+						#point_results = cur.fetchall()
+						cur.execute(SQL_dist, (gid, ))
+						poly_results = cur.fetchall()
 					else: 
 						print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 						#print gazet_entry
 				else:
-					predictions.append([toporef[j], plaintext_file, j, "TOPO_ESTIMATE", tbl, i[0], toporef[j], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1] ] )
+					predictions.append([toporef[j], plaintext_file, j, "TOPO_ESTIMATE", tbl, i[0], toporef[j], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1], gold_lat, gold_long ] )
+					SQL_Point_Dist = "SELECT ST_Distance(ST_GeographyFromText('SRID=4326;POINT(%s %s)'), ST_GeographyFromText('SRID=4326;POINT(%s %s)'));" % (gold_long, gold_lat, rank_dict[i[0]][2][1], rank_dict[i[0]][2][0])
+					cur.execute(SQL_Point_Dist, ())
+					point_results = cur.fetchall()
+					pointdist = point_results[0][0]
+					pointdist = pointdist / float(1000)
+
+				if len(poly_results) > 0:
+					polydist = (poly_results[0][0] / float(1000))
+				else: polydist = pointdist
+
+				print "Point Dist: ", pointdist
+				print "Poly Dist: ", polydist
+
+
+				point_dist_list.append(pointdist)
+				poly_dist_list.append(polydist)
+				if pointdist <= 161.0:
+					point_total_correct += 1
+				if polydist <= 161.0:
+					poly_total_correct += 1
+				point_error += pointdist
+				poly_error += polydist
+				print "Total Topo:", total_topo
+
 				print rank_dict[i[0]]
 				print predictions[-1]
 
-		#print "====================="
-		#print len(contextlist)
-	return predictions, total_topo
+	return point_error, poly_error, total_topo, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct
+
 
 
