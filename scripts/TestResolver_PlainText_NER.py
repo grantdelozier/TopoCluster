@@ -159,6 +159,8 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 
 	start_time = datetime.datetime.now()
 
+	total_topo = 0
+
 	#Test xml should always be a directory name. System currently only supports directory as an argument, though may change in the future.
 	if os.path.isdir(test_xml) == True:
 		print "Reading as directory"
@@ -167,7 +169,6 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		poly_bigerror = []
 		point_dist_list = []
 		poly_dist_list = []
-		total_topo = 0
 		point_error_sum = 0.0
 		poly_error_sum = 0.0
 		error_sum2 = 0.0
@@ -244,7 +245,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			outxml = "neroutputs/ner_" + plaintext
 			#Catch errors from the Stanford NER. Doesn't always succeed in parsing files. 
 			try: 
-				NER.calc(stan_path, filename, outxml)
+				NER.calc2(stan_path, filename, outxml)
 				toporef, wordref = NER.readnerxml(outxml)
 			except:
 				print "Problem using the Stanford Parser for this file, skipping"
