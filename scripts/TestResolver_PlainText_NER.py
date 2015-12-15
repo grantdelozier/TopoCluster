@@ -447,10 +447,15 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
  		QueryEnd = ") as u1 Group by gid Order by sum(u1.stat) desc;"
 
 		TotalQuery = BaseQuery + QueryEnd
-		#print TotalQuery
-		#print wordlist
-		cur.execute(TotalQuery, wordlist)
 
+		try:
+			cur.execute(TotalQuery, wordlist)
+		except:
+			print "POSTGRESQL QUERY BROKE"
+			print "PROVIDE THIS FOR DEBUG:"
+			print TotalQuery
+			print wordlist
+			sys.exit()
 		sorted_total = cur.fetchall()
 
 		y = 0
