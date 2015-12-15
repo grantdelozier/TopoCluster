@@ -3,8 +3,8 @@ import os
 
 import io
 import psycopg2
-import xml.etree.ElementTree as ET
-from lxml import etree
+#import xml.etree.ElementTree as ET
+#from lxml import etree
 import math
 
 from collections import Counter
@@ -15,6 +15,7 @@ import datetime
 import collections
 
 import UnicodeBlocks
+import re
 
 #For use with Tr-ConLL
 
@@ -240,18 +241,19 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 		for plaintext in files:
 			m += 1
 			print plaintext
-			#Change this... it will break on non unix systems
-			filename = test_xml+'/'+plaintext
-			outxml = "neroutputs/ner_" + plaintext
+			filename = os.path.join(test_xml, plaintext)
+			outxml = "ner_" + plaintext
 			#Catch errors from the Stanford NER. Doesn't always succeed in parsing files. 
 			try: 
 				NER.calc2(stan_path, filename, outxml)
 				toporef, wordref = NER.readnerxml(outxml)
+				os.remove(outxml)
 			except:
 				print "Problem using the Stanford Parser for this file, skipping"
 				print plaintext
 				toporef = {}
 				wordref = {}
+
 
 			print "Files left to go: ", len(files) - m
 			print "Total Toponyms ", total_topo
@@ -262,8 +264,22 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			predictions, total_topo = VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup,  
 				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, plaintext, predictions, country_tbl, region_tbl, state_tbl,
 				 geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb)
+			with io.open(results_file+plaintext, 'w', encoding='utf-8') as w:
+				w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long\r\n")
+				for p in predictions:
+					#The encoding of the toponym can change based on the document being read
+					if isinstance(p[0], str):
+						toponym = p[0].decode('utf-8')
+					if isinstance(p[0], unicode):
+						toponym = p[0].encode('utf-8').decode('utf-8')
+					#The encoding of the toponym name from the table can change based on the table results were pulled from
+					if isinstance(p[6], str):
+						table_toponym = p[6].decode('utf-8')
+					if isinstance(p[6], unicode):
+						table_toponym = p[6].encode('utf-8').decode('utf-8')
+					w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+'\r\n')
 
-		print "=============Vector Sum================"
+		'''print "=============Vector Sum================"
 		print "Total Toponyms: ", total_topo
 		print "Window: ", window
 		print "Percentile: ", percentile
@@ -296,7 +312,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 					table_toponym = p[6].decode('utf-8')
 				if isinstance(p[6], unicode):
 					table_toponym = p[6].encode('utf-8').decode('utf-8')
-				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+'\r\n')
+				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+'\r\n')'''
 		conn.close()
 
 	end_time = datetime.datetime.now()
@@ -340,6 +356,12 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		#Get all words in a context window around the toponym's index
 		contextlist = getContext(wordref, j, window, stopwords, toporef)
 		
+		#If stanford NER tokenizer breaks and puts ',' with NE, then remove the ending comma or period
+		if topobase[-1] == ',':
+			topobase = topobase[:-1]
+		#if len(topobase) > 1 and topobase[-1] == "." and topobase[-2].islower():
+		#	topobase=topobase[:-1]
+
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for acronyms
 		if topobase.title() != topobase and (len(toporef[j]) != 2 and len(toporef[j]) != 3):
 			#contextlist.append(topobase.title())
@@ -347,14 +369,15 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 			topobase = topobase.title()
 
 		#Change acronyms with periods into regular acronyms
-		if "." in topobase and ". " not in topobase.strip():
-			combinedtokens = ""
-			for token in topobase.split("."):
-				combinedtokens = combinedtokens + token
-			topotokens.append(combinedtokens)
-			contextlist.append([combinedtokens, "MainTopo", 0])
-
+		if ". " not in topobase.strip():
+			no_period_topobase = re.sub(r"\b([A-Z])\.", r"\1", topobase)
+			if topobase != no_period_topobase:
+				topotokens.append(no_period_topobase)
+				contextlist.append([no_period_topobase, "MainTopo", 0])
+			else:
+				topotokens.append(topobase)
 		else: topotokens.append(topobase)
+
 		gazet_topos = topotokens
 		if " " in topobase:
 			topotokens.append(topobase.replace(" ", '|'))

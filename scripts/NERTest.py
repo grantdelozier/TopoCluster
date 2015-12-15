@@ -68,7 +68,7 @@ def calc(stan_path, filename, outxml):
 	op.write(u"<sometext>"+'\r\n')
 	op.close()
 	with io.open(xmlfile, 'a', encoding='utf-8') as w:
-		subprocess.check_call(["java", "-Xmx4g", "-cp", "stanford-ner.jar", "edu.stanford.nlp.ie.crf.CRFClassifier", "-loadClassifier", "classifiers/english.all.3class.distsim.crf.ser.gz", "-textFile", filename, "-outputFormat", "xml", "-tokenizerFactory", "edu.stanford.nlp.process.WhitespaceTokenizer", "-tokenizerOptions", "tokenizeNLs=true" ], stdout=w)
+		subprocess.check_call(["java", "-Xmx4g", "-cp", "stanford-ner.jar", "edu.stanford.nlp.ie.crf.CRFClassifier", "-loadClassifier", "classifiers/english.all.3class.distsim.crf.ser.gz", "-textFile", filename, "-outputFormat", "xml", "edu.stanford.nlp.process.PTBTokenizer" ], stdout=w)
 		w.write(u"</sometext>")
 	#readnerxml(xmlfile)
 
