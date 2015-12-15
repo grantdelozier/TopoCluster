@@ -244,7 +244,8 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 			filename = os.path.join(test_xml, plaintext)
 			outxml = "ner_" + plaintext
 			#Catch errors from the Stanford NER. Doesn't always succeed in parsing files. 
-			try: 
+			try:
+				#NER.calc(stan_path, filename, outxml) 
 				NER.calc2(stan_path, filename, outxml)
 				toporef, wordref = NER.readnerxml(outxml)
 				os.remove(outxml)
