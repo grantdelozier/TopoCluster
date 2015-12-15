@@ -148,6 +148,34 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	#Initialize a cursor for DB connection
 	cur = conn.cursor()
 
+	#Check to see if database tables were set up properly
+	try:
+		ood_table_list = ['enwiki20130102_ner_final_atoi', 'enwiki20130102_ner_final_jtos', 'enwiki20130102_ner_final_ttoz', 'enwiki20130102_ner_final_other']
+		for tb in ood_table_list:
+			SQL_check = "select * FROM %s LIMIT 1;" % (tb)
+			cur.execute(SQL_check)
+			result = cur.fetchall()
+			if len(result) > 0:	
+				print tb, "table loaded correctly"
+	except:
+		print "Out of domain tables were not loaded correctly"
+		print "Exiting..."
+		sys.exit()
+
+	try:
+		if in_domain_stat_tbl != "None":
+			SQL_check = "select * FROM %s LIMIT 1;" % (out_domain_stat_tbl)
+			cur.execute(SQL_check)
+			result = cur.fetchall()
+			if len(result) > 0:
+				print out_domain_stat_tbl, "table loaded correctly"
+	except:
+		print "In domain table provided was not loaded correctly:", in_domain_stat_tbl
+		print "Exiting..."
+		sys.exit()
+
+
+
 	#Intitialize a Ditionary that links GlobalGrid gid values to Latitude/Longitudes
 	lat_long_lookup = {}
 	SQL2 = "SELECT gid, ST_Y(geog::geometry), ST_X(geog::geometry) from %s ;" % gtbl
@@ -319,7 +347,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	end_time = datetime.datetime.now()
 
 	print total_topo
-	print "Check File @ ", results_file
+	print "Check File @ ", results_file+plaintext
 	print "Total Time: ", end_time - start_time
 
 #This function evaluates a word to see which out of domain table should be queries to obtain the Gi* vector
@@ -414,7 +442,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 
  					if in_domain_stat_tbl != "None":
  						Nested_Select = Nested_Select + "\r\n UNION \r\n SELECT gid, word, stat * %s * %s as stat FROM %s where %s.word = %s " % (str(weight), str(in_corp_lamb), in_domain_stat_tbl, in_domain_stat_tbl, '%s')
-
+ 						wordlist.append(word[0])
  					BaseQuery = BaseQuery + Nested_Select
  		QueryEnd = ") as u1 Group by gid Order by sum(u1.stat) desc;"
 
