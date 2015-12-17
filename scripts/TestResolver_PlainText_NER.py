@@ -180,7 +180,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	lat_long_lookup = {}
 	SQL2 = "SELECT gid, ST_Y(geog::geometry), ST_X(geog::geometry) from %s ;" % gtbl
 	cur.execute(SQL2)
-	lat_long_lookup = dict([(g[0], [g[1],g[2]]) for g in cur.fetchall()])
+	lat_long_lookup = dict([(int(g[0]), [g[1],g[2]]) for g in cur.fetchall()])
 	#print len(lat_long_lookup)
 
 	point_total_correct = 0
@@ -447,15 +447,8 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
  		QueryEnd = ") as u1 Group by gid Order by sum(u1.stat) desc;"
 
 		TotalQuery = BaseQuery + QueryEnd
+		cur.execute(TotalQuery, wordlist)
 
-		try:
-			cur.execute(TotalQuery, wordlist)
-		except:
-			print "POSTGRESQL QUERY BROKE"
-			print "PROVIDE THIS FOR DEBUG:"
-			print TotalQuery
-			print wordlist
-			sys.exit()
 		sorted_total = cur.fetchall()
 
 		y = 0
