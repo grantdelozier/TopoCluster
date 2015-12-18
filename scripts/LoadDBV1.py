@@ -55,13 +55,13 @@ def Load(tf, tbl_name, conn_info, traintype):
                 if traintype == "twitter":
                     #print row[0]
                     userID = row[0]
-                    latit = row[1].split(',')[0]
-                    longit = row[1].split(',')[1]
+                    latit = row[1].split(',')[1]
+                    longit = row[1].split(',')[0]
                 elif traintype == "wiki":
                     userID = row[0]
                     page_name = row[1]
-                    latit = row[2].split(',')[0]
-                    longit = row[2].split(',')[1]
+                    latit = row[2].split(',')[1]
+                    longit = row[2].split(',')[0]
                     #F_Freq = row[9]
                 newDocument = Document(userID, latit, longit, filename)
                 docList.append(newDocument)
