@@ -569,6 +569,159 @@ if len(sys.argv) >= 3 and "--help" not in sys.argv:
 
         tstr.calc(stat_tbl , f, conn_info, gtbl, window, percentile, place_name_weight, country_tbl, region_tbl, state_tbl, geonames_tbl, tst_tbl, stan_path)
 
+    if mode_arg.lower() == "xml_topo_resolve":
+        import TestResolver_xml as tr
+
+        #Statistics Table (Zavg/Gi*)
+        try:
+            in_domain_stat_tbl = args[args.index("-indomain_stat_tbl")+1]
+        except:
+            print "You did not provide a name for an in domain statistics table to use"
+            print "Defaulting to None"
+            in_domain_stat_tbl = "None"
+            #sys.exit("Error")
+
+        try:
+            out_domain_stat_tbl = args[args.index("-outdomain_stat_tbl")+1]
+        except:
+            print "You did not provide a name for an out of domain statistics table to use"
+            print "Defaulting to None"
+            out_domain_stat_tbl = "None"
+            if in_domain_stat_tbl == "None" and out_domain_stat_tbl == "None":
+                print "Error:"
+                print "You provided neither an in domain or out of domain stat table"
+                sys.exit("Error")
+
+        #Lambda weight applied to Gi* vectors from the in domain statistics table
+        try:
+            in_domain_lambda = args[args.index("-in_domain_lambda")+1]
+        except:
+            print ""
+            print "You did not provide a value for in domain lambda, defaulting to 0.0"
+            print ""
+            in_domain_lambda = 0.0
+
+        try:
+            out_domain_lambda = args[args.index("-out_domain_lambda")+1]
+        except:
+            print ""
+            print "You did not provide a value for out domain lambda, defaulting to 0.0"
+            print ""
+            out_domain_lambda = 0.0
+            if float(in_domain_lambda) == 0.0 and float(out_domain_lambda) == 0.0:
+                print "Error:"
+                print "A value of 0.0 was provided for both -in_domain_lambda and -out_domain_lambda"
+                sys.exit("Error")
+
+        #Train file, dev file, or tst file
+        if '-tf' in args:
+            f = args[args.index("-tf")+1]
+        elif '-df' in args:
+            f = args[args.index("-df")+1]
+        elif '-tstf' in args:
+            f = args[args.index("-tstf")+1]
+
+        #Postgresql connection information
+        try:
+            conn_info = args[args.index('-conn')+1]
+        except:
+            print "Problem parsing the connection information provided"
+            sys.exit("Error")
+
+        #Pointgrid table name
+        try:
+            gtbl = args[args.index('-gtbl')+1]
+        except:
+            print "You did not provide a grid table argument"
+            sys.exit("Error")
+
+        #context window size
+        try:
+            window = int(args[args.index('-window')+1])
+        except:
+            print "You did not provide a window argument, defaulting to 15"
+            window = 15
+
+        #percentile of selection
+        try:
+            percentile = float(args[args.index('-percentile')+1])
+        except:
+            print "You did not provide a window argument, defaulting to .5"
+            percentile = .5
+
+        #Weight applied to Gi* Vector of main toponym being evaluated
+        try:
+            main_topo_weight = float(args[args.index('-main_topo_weight')+1])
+        except:
+            print "You did not provide a main topo weight, defaulting to 10"
+            main_topo_weight = 10.0
+
+        #Weight applied to Gi* Vector of other toponyms in context
+        try:
+            other_topo_weight = float(args[args.index('-other_topo_weight')+1])
+        except:
+            print "You did not provide an other topo weight, defaulting to 5"
+            other_topo_weight = 5.0
+
+        #Weight applied to Gi* Vector of other toponyms in context
+        try:
+            other_word_weight = float(args[args.index('-other_word_weight')+1])
+        except:
+            print "You did not provide an other word weight, defaulting to 1"
+            other_word_weight = 1.0
+
+        #Country Table Name
+        try:
+            country_tbl = args[args.index('-country_tbl')+1]
+        except:
+            print "You did not provide a country table argument"
+            sys.exit("Error")
+
+        #Region Table Name
+        try:
+            region_tbl = args[args.index('-region_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
+
+        #State Table Name
+        try:
+            state_tbl = args[args.index('-state_tbl')+1]
+        except:
+            print "You did not provide a region table argument"
+            sys.exit("Error")
+
+        #Geonames Table Name
+        try:
+            geonames_tbl = args[args.index('-geonames_tbl')+1]
+        except:
+            print "You did not provide a geonames table argument"
+            sys.exit("Error")
+
+        #US Prominent Table Name
+        #try:
+        #    us_prom_tbl = args[args.index('-us_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent US city table argument"
+        #    sys.exit("Error")
+
+        #US Prominent Table Name
+        #try:
+        #    world_prom_tbl = args[args.index('-world_prom_tbl')+1]
+        #except:
+        #    print "You did not provide a prominent WORLD city table argument"
+        #    sys.exit("Error")
+
+        #Geonames Table Name
+        try:
+            results_file = args[args.index('-results_file')+1]
+        except:
+            print "You did not provide a results file name, defaulting to TestResults.txt"
+            results_file = "TestResults.txt"
+
+        tr.calc(in_domain_stat_tbl, out_domain_stat_tbl, f, conn_info, gtbl, window, percentile, float(main_topo_weight), float(other_topo_weight), float(other_word_weight), country_tbl, region_tbl, state_tbl, geonames_tbl, float(in_domain_lambda), float(out_domain_lambda), results_file)
+
+
     if mode_arg.lower() == "plain_topo_resolve":
         import TestResolver_PlainText_NER as tr
         #print "Starting test of topo resolver on TRConll"
@@ -668,8 +821,8 @@ if len(sys.argv) >= 3 and "--help" not in sys.argv:
         try:
             other_topo_weight = float(args[args.index('-other_topo_weight')+1])
         except:
-            print "You did not provide an other topo weight, defaulting to 3"
-            other_topo_weight = 3.0
+            print "You did not provide an other topo weight, defaulting to 5"
+            other_topo_weight = 5.0
 
         #Weight applied to Gi* Vector of other toponyms in context
         try:
