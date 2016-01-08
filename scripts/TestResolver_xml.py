@@ -1,5 +1,6 @@
 import sys
 import os
+import copy
 
 import string
 import io
@@ -362,6 +363,42 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		BaseQuery = "SELECT u1.gid::integer, sum(u1.stat) FROM ( "
 
 		wordlist = []
+
+		other_topo_list = []
+		main_topo_list = []
+
+		contextlist2 = copy.deepcopy(contextlist)
+
+		for word in contextlist2:
+			if word[0] not in stopwords:
+				table = getCorrectTable(word[0], tab1, tab2, tab3)
+				if len(table) > 0:
+					if word[1] == "MainTopo":
+						main_topo_list.append(word[0])
+					elif word[1] == "OtherTopo":
+						other_topo_list.append(word[0])
+
+		for word in contextlist2:
+			if word[0] in main_topo_list and word[1] == "OtherTopo":
+				del contextlist[contextlist.index(word)]
+			if other_word_weight <= 0.0:
+				if word[1] == "Word":
+					del contextlist[contextlist.index(word)]
+
+		'''other_topo_list = []
+		main_topo_list = []
+
+		for word in contextlist:
+			if word[0] not in stopwords:
+				table = getCorrectTable(word[0], tab1, tab2, tab3)
+				if len(table) > 0:
+					if word[1] == "MainTopo":
+						main_topo_list.append(word[0])
+					elif word[1] == "OtherTopo":
+						other_topo_list.append(word[0])
+
+		print "Main Topos:", main_topo_list
+		print "Other Topos in Context:", other_topo_list'''
 
 		for word in contextlist:
 			if word[0] not in stopwords:
