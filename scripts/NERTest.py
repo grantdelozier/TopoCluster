@@ -44,14 +44,23 @@ def readnerxml2(xmlfile):
 		for w in child:
 			i += 1
 			if w.attrib['entity'] == 'LOCATION':
-				if locfound == True:
-					i = i - 1
-					#print 'INSIDE IF STATEMENT'
-					toporef2[i] = toporef2[i] + ' ' + w.text
-					i = i + 1
-				else:
-					toporef2[i] = w.text
 				wordref2[i] = w.text
+				if locfound == True:
+					#print i
+					#i = i - 1
+					#print i
+					#print 'INSIDE IF STATEMENT'
+					#print sorted(toporef2.keys())
+					toporef2[saved_i] = toporef2[saved_i] + ' ' + w.text
+					#if i in toporef2:
+					#	toporef2[i] = toporef2[i] + ' ' + w.text
+					#else:
+					#	toporef2[i] = wordref2[i-1] + ' ' + w.text
+					#i = i + 1
+				else:
+					saved_i = i
+					toporef2[i] = w.text
+				#toporef2[i] = w.text
 				locfound = True
 			else:  
 				wordref2[i] = w.text
@@ -62,7 +71,7 @@ def calc(stan_path, filename, outxml):
 	#print text
 	os.chdir(stan_path)
 	#print os.getcwd()
-	#print outxml
+	print "Ner outfile:", outxml
 	xmlfile = outxml
 	op = io.open(xmlfile, 'w', encoding='utf-8')
 	op.write(u"<sometext>"+'\r\n')
@@ -71,6 +80,23 @@ def calc(stan_path, filename, outxml):
 		subprocess.check_call(["java", "-Xmx4g", "-cp", "stanford-ner.jar", "edu.stanford.nlp.ie.crf.CRFClassifier", "-loadClassifier", "classifiers/english.all.3class.distsim.crf.ser.gz", "-textFile", filename, "-outputFormat", "xml", "edu.stanford.nlp.process.PTBTokenizer" ], stdout=w)
 		w.write(u"</sometext>")
 	#readnerxml(xmlfile)
+
+#defaults to whitespace tokenizer
+def calc3(stan_path, filename, outxml):
+	#print text
+	os.chdir(stan_path)
+	#print os.getcwd()
+	print "Ner outfile:", outxml
+	xmlfile = outxml
+	op = io.open(xmlfile, 'w', encoding='utf-8')
+	op.write(u"<sometext>"+'\r\n')
+	op.close()
+	with io.open(xmlfile, 'a', encoding='utf-8') as w:
+		subprocess.check_call(["java", "-Xmx4g", "-cp", "stanford-ner.jar", "edu.stanford.nlp.ie.crf.CRFClassifier", "-loadClassifier", "classifiers/english.all.3class.distsim.crf.ser.gz", "-textFile", filename, "-outputFormat", "xml", "-tokenizerFactory", "edu.stanford.nlp.process.WhitespaceTokenizer", "-tokenizerOptions", "tokenizeNLs=true" ], stdout=w)
+		w.write(u"</sometext>")
+	#readnerxml(xmlfile)
+
+	
 
 #This version doesn't default to pre-whitespace tokenized
 def calc2(stan_path, filename, outxml):
