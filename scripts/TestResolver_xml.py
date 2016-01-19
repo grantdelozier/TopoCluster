@@ -44,6 +44,8 @@ def parse_xml(afile):
 							toporef[i] = [wordref[i], sub3.attrib]
 	return wordref, toporef
 
+#Returns the context of words surrounding an index, i, given a window size.
+#Also returns the type of token it represents
 def getContext(wordref, i, window, stopwords, toporef):
 	j = i
 	contextlist = [[wordref[j], "MainTopo", (i-j)]]
@@ -88,6 +90,7 @@ def updateInPlace(a,b):
 	a.update(b)
 	return a
 
+#Main Function
 def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, window, percentile,
 		 main_topo_weight, other_topo_weight, other_word_weight, country_tbl, region_tbl,
 		 state_tbl, geonames_tbl, in_corp_lamb, out_corp_lamb, results_file):
@@ -369,6 +372,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 
 		contextlist2 = copy.deepcopy(contextlist)
 
+		#The next 2 for loops remove repeats of the MainTopo from the context toponyms
 		for word in contextlist2:
 			if word[0] not in stopwords:
 				table = getCorrectTable(word[0], tab1, tab2, tab3)
@@ -377,7 +381,6 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 						main_topo_list.append(word[0])
 					elif word[1] == "OtherTopo":
 						other_topo_list.append(word[0])
-
 		for word in contextlist2:
 			if word[0] in main_topo_list and word[1] == "OtherTopo":
 				del contextlist[contextlist.index(word)]
@@ -433,17 +436,13 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 
 		y = 0
 		rank_dict = {}
-		#ranked_contrib = sorted(contrib_dict.items(), key=itemgetter(1), reverse=True)
 		for t in sorted_total:
 			y += 1 
-			#contrib_sub = sorted(contrib_dict[t[0]], key=itemgetter(1), reverse=True)
 			rank_dict[t[0]] = [y, t[1], lat_long_lookup[t[0]]]
 
 		y = 0
-
 		for i in sorted_total[:5]:
 			y += 1
-			#print rank_dict[i[0]]
 			if y == 1:
 				if topobase not in gazet_topos:
 					gazet_topos.append(topobase)
@@ -455,7 +454,6 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				gid = 0
 				#print "Gazet Entry: ", gazet_entry
 				if len(gazet_entry) > 0:
-					#print "Gazet Entry: ", gazet_entry
 					if len(gazet_entry) == 1:
 						#print "Executing Distance SQL for ", gazet_entry
 						gid = int(gazet_entry[0][1])
@@ -501,8 +499,6 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				print rank_dict[i[0]]
 				print predictions[-1]
 
-		#print "====================="
-		#print len(contextlist)
 	return predictions, total_topo, point_error, poly_error, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct
 
 def flatten(l):
@@ -513,6 +509,7 @@ def flatten(l):
         else:
             yield el
 
+#Returns nearest gazet entry given the placename and latlong
 def GetGazets(cur, placenames, latlong, country_tbl, region_tbl, state_tbl, geonames_tbl, country_alt, region_alt, state_alt, pplc_alt):
 	names = tuple(x for x in placenames)
 	#print names
