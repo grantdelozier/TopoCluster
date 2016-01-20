@@ -198,3 +198,5 @@ Tests Topocluster against lat/longs found in xml file. Uses gold NER labels.
 ```
 python TopoCluster.py -mode xml_topo_resolve -tstf /home/yourUsers/xml_directory -conn "dbname=mydbname user=myusername host='localhost' password=' '" -gtbl globalgrid_5_clip_geog -percentile 1.0 -window 15 -main_topo_weight 40.0 -other_topo_weight 5.0 -other_word_weight 0.5 -country_tbl countries_2012 -region_tbl regions_2012 -state_tbl states_2012 -geonames_tbl geonames_all -out_domain_lambda 1.0 -results_file /home/yourUser/results.txt
 ```
+
+This same mode can be used to test TopoCluster against your own datasets. The format of the xml should be the same as the the file found in data/wotr-topo-train-106-170.xml
