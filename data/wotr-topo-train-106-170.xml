@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc id="106-170" title="106" domain="wotr">
+<s id="s1">
+<toponym term="San Francisco">
+<candidates>
+<cand lat="37.7645830328" long="-122.4650834" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="October"/>
+<w tok="23"/>
+<w tok=","/>
+<w tok="1862"/>
+<w tok="."/>
+<w tok="Brigadier"/>
+<w tok="General"/>
+<w tok="L."/>
+<w tok="THOMAS"/>
+<w tok=","/>
+<w tok="Adjutant-General"/>
+<w tok="U."/>
+<w tok="S."/>
+<w tok="Army"/>
+<w tok=","/>
+<toponym term="Washington">
+<candidates>
+<cand lat="37.9827044152" long="-113.188036751" selected="yes"/>
+</candidates>
+</toponym>
+<w tok=","/>
+<toponym term="D. C.">
+<candidates>
+<cand lat="38.9049966338" long="-77.0337810493" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="GENERAL"/>
+<toponym term="D. C.">
+<candidates>
+<cand lat="38.9049966338" long="-77.0337810493" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="I"/>
+<w tok="am"/>
+<w tok="advised"/>
+<w tok="by"/>
+<w tok="Colonel"/>
+<w tok="Connor"/>
+<w tok="of"/>
+<w tok="his"/>
+<w tok="arrival"/>
+<w tok="with"/>
+<w tok="his"/>
+<w tok="command"/>
+<w tok="at"/>
+<toponym term="Salt Lake City">
+<candidates>
+<cand lat="40.75" long="-111.883333" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="on"/>
+<w tok="the"/>
+<w tok="20th"/>
+<w tok="instant"/>
+<w tok=","/>
+<w tok="and"/>
+<w tok="occupation"/>
+<w tok="of"/>
+<w tok="the"/>
+<w tok="site"/>
+<w tok="for"/>
+<w tok="a"/>
+<w tok="new"/>
+<w tok="post"/>
+<w tok="."/>
+<w tok="The"/>
+<w tok="colonel"/>
+<w tok="reports"/>
+<w tok="his"/>
+<w tok="command"/>
+<w tok="in"/>
+<w tok="good"/>
+<w tok="health"/>
+<w tok="and"/>
+<w tok="discipline"/>
+<w tok="."/>
+<w tok="I"/>
+<w tok="also"/>
+<w tok="inclose*"/>
+<w tok="a"/>
+<w tok="copy"/>
+<w tok="of"/>
+<w tok="a"/>
+<w tok="communication"/>
+<w tok="received"/>
+<w tok="from"/>
+<w tok="Major"/>
+<w tok="D."/>
+<w tok="Fergusson"/>
+<w tok=","/>
+<w tok="First"/>
+<w tok="Cavalry"/>
+<w tok="California"/>
+<w tok="Volunteers"/>
+<w tok=","/>
+<w tok="dated"/>
+<w tok="at"/>
+<toponym term="Tucson">
+<candidates>
+<cand lat="32.221667" long="-110.926389" selected="yes"/>
+</candidates>
+</toponym>
+<w tok=","/>
+<toponym term="Ariz. Ter.">
+<candidates>
+<cand lat="34.2787291101" long="-111.659954425" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="."/>
+<toponym term="Ariz. Ter.">
+<candidates>
+<cand lat="34.2787291101" long="-111.659954425" selected="yes"/>
+</candidates>
+</toponym>
+<w tok=","/>
+<w tok="October"/>
+<w tok="4"/>
+<w tok=","/>
+<w tok="with"/>
+<w tok="two"/>
+<w tok="inclosures"/>
+<w tok="all"/>
+<w tok="relating"/>
+<w tok="to"/>
+<w tok="the"/>
+<w tok="occupation"/>
+<w tok="of"/>
+<toponym term="Arizona">
+<candidates>
+<cand lat="34.2787291101" long="-111.659954425" selected="yes"/>
+</candidates>
+</toponym>
+<w tok="by"/>
+<w tok="the"/>
+<w tok="rebel"/>
+<w tok="troops"/>
+<w tok="previous"/>
+<w tok="to"/>
+<w tok="the"/>
+<w tok="arrival"/>
+<w tok="of"/>
+<w tok="the"/>
+<w tok="Column"/>
+<w tok="from"/>
+<w tok="California"/>
+<w tok="."/>
+<w tok="Very"/>
+<w tok="respectfully"/>
+<w tok=","/>
+<w tok="your"/>
+<w tok="most"/>
+<w tok="obedient"/>
+<w tok="servant"/>
+<w tok=","/>
+<w tok="G."/>
+<w tok="WRIGHT"/>
+<w tok=","/>
+<w tok="Brigadier-General"/>
+<w tok=","/>
+<w tok="U."/>
+<w tok="S."/>
+<w tok="Army"/>
+<w tok=","/>
+<w tok="Commanding"/>
+<w tok="."/>
+</s>
+</doc>
