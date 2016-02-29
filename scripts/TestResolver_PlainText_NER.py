@@ -407,6 +407,13 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				topotokens.append(topobase)
 		else: topotokens.append(topobase)
 
+		#Change acronym with periods into regular acronyms #2
+		if ". " in topobase.strip():
+			if re.match(r"\b[A-Z]\.\s[A-Z]\.", topobase):
+				topotokens.append(topobase.strip()[0]+topobase.strip()[3])
+				contextlist.append([topobase.strip()[0]+topobase.strip()[3], "MainTopo", 0])
+				topobase = topobase.strip()[0]+topobase.strip()[3]
+
 		gazet_topos = topotokens
 		if " " in topobase:
 			topotokens.append(topobase.replace(" ", '|'))
@@ -419,6 +426,9 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		BaseQuery = "SELECT u1.gid::integer, sum(u1.stat) FROM ( "
 
 		wordlist = []
+
+		gold_lat = float(toporef[j][1]['lat'])
+		gold_long = float(toporef[j][1]['long'])
 
 		for word in contextlist:
 			if word[0] not in stopwords:

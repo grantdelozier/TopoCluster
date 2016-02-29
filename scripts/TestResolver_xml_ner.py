@@ -174,25 +174,6 @@ def rebalance(wordref, wordref2, toporef2, index, offset, topoall, toporef):
 
 
 def redoToporefs(toporef, toporef2, wordref, wordref2, topoall):
-	'''for j in sorted(toporef2.keys()):
-		print j, toporef2[j]
-		if j in topoall and topoall[j] == toporef2[j]:
-			pass
-		else:
-			print "Word Refs:", wordref[j-1], wordref[j], wordref[j+1]
-			print "Word Refs2:", wordref2[j-1], wordref2[j], wordref2[j+1]
-			print topoall[j]'''
-	'''for j in sorted(wordref2.keys()):
-		#print j
-		if wordref[j] != wordref2[j]:
-			print "~=~=~ Rebalancing ~=~=~"
-			print wordref[j], "!= ", wordref2[j]
-			index = j
-			offset = (0 - (len(wordref[j].split(" "))-1)) + (len(wordref2[j].split(" "))-1)
-			print "index=", index, "offset=", offset
-			wordref2, toporef2 = rebalance(wordref, wordref2, toporef2, index, offset, topoall, toporef)'''
-	print "toporef2:"
-	print toporef2
 	for j in sorted(wordref2.keys()):
 		#print j, wordref[j], wordref2[j]
 		if j in topoall and j in toporef2 and toporef2[j] == topoall[j]:
@@ -514,6 +495,13 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, cur,
 					else:
 						topotokens.append(topobase)
 				else: topotokens.append(topobase)
+
+				#Change acronym with periods into regular acronyms #2
+				if ". " in topobase.strip():
+					if re.match(r"\b[A-Z]\.\s[A-Z]\.", topobase):
+						topotokens.append(topobase.strip()[0]+topobase.strip()[3])
+						contextlist.append([topobase.strip()[0]+topobase.strip()[3], "MainTopo", 0])
+						topobase = topobase.strip()[0]+topobase.strip()[3]
 
 				gazet_topos = topotokens
 				if " " in topobase:
