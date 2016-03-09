@@ -254,7 +254,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 				 geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, point_error_sum, poly_error_sum, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct)
 			print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
 		with io.open(results_file, 'w', encoding='utf-8') as w:
-			w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long,pointdist_err,polydist_err,point_cor,poly_cor\r\n")
+			w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long,pointdist_err,polydist_err,point_cor,poly_cor,gold_lat,gold_long\r\n")
 			for p in predictions:
 				#The encoding of the toponym can change based on the document being read
 				if isinstance(p[0], str):
@@ -266,7 +266,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 					table_toponym = p[6].decode('utf-8')
 				if isinstance(p[6], unicode):
 					table_toponym = p[6].encode('utf-8').decode('utf-8')
-				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+u','+unicode(p[9])+u','+unicode(p[10])+u','+unicode(p[11])+u','+unicode(p[12])+'\r\n')
+				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+u','+unicode(p[9])+u','+unicode(p[10])+u','+unicode(p[11])+u','+unicode(p[12])+u','+unicode(p[13])+u','+unicode(p[14])+'\r\n')
 		conn.close()
 		print "=============Vector Sum================"
 		print "Total Toponyms: ", total_topo
@@ -285,7 +285,7 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 	end_time = datetime.datetime.now()
 
 	print total_topo
-	print "Check File @ ", results_file+xml_file
+	print "Check File @ ", results_file
 	print "Total Time: ", end_time - start_time
 
 #This function evaluates a word to see which out of domain table should be queries to obtain the Gi* vector
@@ -334,8 +334,15 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 		#	topobase=topobase[:-1]
 
 		#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for some acronyms
-		if string.capwords(topobase) != topobase and (len(toporef[j][0]) != 2):
-			#contextlist.append(topobase.title())
+		#acronyms that are avoided are of form CA and USA
+		if string.capwords(topobase) != topobase and (len(toporef[j][0]) != 2) and (len(toporef[j][0]) != 3 or re.match(r'\b[A-Z]+.', toporef[j][0])):
+			#Remove the all caps topobase from the context
+			m = len(contextlist)
+			while (m):
+				m = m - 1
+				if contextlist[m][1] == 'MainTopo':
+					#print "Deleting", contextlist[m]
+					del contextlist[m]
 			contextlist.append([string.capwords(topobase), "MainTopo", 0])
 			topobase = string.capwords(topobase)
 
@@ -479,7 +486,8 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 				else:
 					method = "TOPO_ESTIMATE"
 					gid = i[0]
-					name = toporef[j]
+					name = topobase
+					tbl = u"N/A"
 					centroid_lat = lat_long_lookup[i[0]][0]
 					centroid_long = lat_long_lookup[i[0]][1]
 				SQL_Point_Dist = "SELECT ST_Distance(ST_GeographyFromText('SRID=4326;POINT(%s %s)'),ST_GeographyFromText('SRID=4326;POINT(%s %s)'));" % (gold_long, gold_lat, rank_dict[i[0]][2][1], rank_dict[i[0]][2][0])
@@ -508,7 +516,7 @@ def VectorSum(wordref, toporef, total_topo, cur, lat_long_lookup, percentile, wi
 					poly_total_correct += 1
 					poly_cor = "1"
 
-				predictions.append([toporef[j][0], xml_file, j, method, tbl, gid, name, centroid_lat, centroid_long, pointdist, polydist, point_cor, poly_cor] )
+				predictions.append([toporef[j][0], xml_file, j, method, tbl, gid, name, centroid_lat, centroid_long, pointdist, polydist, point_cor, poly_cor, gold_lat, gold_long] )
 
 				point_error += pointdist
 				poly_error += polydist

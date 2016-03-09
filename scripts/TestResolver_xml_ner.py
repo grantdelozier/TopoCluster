@@ -361,25 +361,20 @@ def calc(in_domain_stat_tbl, out_domain_stat_tbl, test_xml, conn_info, gtbl, win
 				percentile, window, stopwords, main_topo_weight, other_topo_weight, other_word_weight, xml_file, predictions, country_tbl, region_tbl, state_tbl,
 				 geonames_tbl, cntry_alt, region_alt, state_alt, pplc_alt, point_ner_fp, poly_ner_fp, ner_fn, poly_ner_tp, point_ner_tp, in_domain_stat_tbl, in_corp_lamb, out_corp_lamb, point_error_sum, poly_error_sum, point_dist_list, poly_dist_list, point_total_correct, poly_total_correct, point_incorrect, poly_incorrect, total_attempted)
 			print "Polygon Accuracy @ 161km : ", float(poly_total_correct) / float(total_topo)
-			with io.open(results_file+xml_file, 'w', encoding='utf-8') as w:
-				w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long\r\n")
-				for p in predictions:
-					#The encoding of the toponym can change based on the document being read
-					if isinstance(p[0], str):
-						toponym = p[0].decode('utf-8')
-					if isinstance(p[0], unicode):
-						toponym = p[0].encode('utf-8').decode('utf-8')
-					#The encoding of the toponym name from the table can change based on the table results were pulled from
-					if isinstance(p[6], str):
-						table_toponym = p[6].decode('utf-8')
-					if isinstance(p[6], unicode):
-						table_toponym = p[6].encode('utf-8').decode('utf-8')
-					#print p[6]
-					w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+'\r\n')
-			#except:
-			#	print "!!!!!!!!!!!!!!!!"
-			#	print "NER parse failed"
-			#	print "!!!!!!!!!!!!!!!!"
+		with io.open(results_file, 'w', encoding='utf-8') as w:
+			w.write(u"NER_Toponym,Source_File,Token_index,GeoRefSource,Table,gid,Table_Toponym,Centroid_Lat,Centroid_Long,pointdist_err,polydist_err,point_cor,poly_cor\r\n")
+			for p in predictions:
+				#The encoding of the toponym can change based on the document being read
+				if isinstance(p[0], str):
+					toponym = p[0].decode('utf-8')
+				if isinstance(p[0], unicode):
+					toponym = p[0].encode('utf-8').decode('utf-8')
+				#The encoding of the toponym name from the table can change based on the table results were pulled from
+				if isinstance(p[6], str):
+					table_toponym = p[6].decode('utf-8')
+				if isinstance(p[6], unicode):
+					table_toponym = p[6].encode('utf-8').decode('utf-8')
+				w.write(toponym+u','+p[1]+u','+unicode(p[2])+u','+p[3]+u','+p[4]+u','+unicode(p[5])+u','+table_toponym+u','+unicode(p[7])+u','+unicode(p[8])+u','+unicode(p[9])+u','+unicode(p[10])+u','+unicode(p[11])+u','+unicode(p[12])+'\r\n')
 		conn.close()
 		point_dist_list.sort()
 		poly_dist_list.sort()
@@ -481,10 +476,18 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, cur,
 				#	topobase=topobase[:-1]
 
 				#This section attempts to enforce regularity in case. Attempt to force title case on all place names, except for some acronyms
-				if string.capwords(topobase) != topobase and (len(toporef[j][0]) != 2):
-					#contextlist.append(topobase.title())
+				#acronyms that are avoided are of form CA and USA
+				if string.capwords(topobase) != topobase and (len(toporef[j][0]) != 2) and (len(toporef[j][0]) != 3 or re.match(r'\b[A-Z]+.', toporef[j][0])):
+					#Remove the all caps topobase from the context
+					m = len(contextlist)
+					while (m):
+						m = m - 1
+						if contextlist[m][1] == 'MainTopo':
+							#print "Deleting", contextlist[m]
+							del contextlist[m]
 					contextlist.append([string.capwords(topobase), "MainTopo", 0])
 					topobase = string.capwords(topobase)
+
 
 				#Change acronyms with periods into regular acronyms
 				if ". " not in topobase.strip():
@@ -620,7 +623,7 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, cur,
 								name = gazet_entry[0][2]
 								centroid_lat = gazet_entry[0][3]
 								centroid_long = gazet_entry[0][4]
-								predictions.append([toporef[j][0], xml_file, j, "GAZET", tbl, gid, name, centroid_lat, centroid_long ] )
+								method = "GAZET"
 								SQL_dist = "SELECT ST_Distance(ST_GeographyFromText('SRID=4326;POINT(%s %s)'), p2.geog) FROM %s as p2 where p2.gid = %s;" % (gold_long, gold_lat, tbl, '%s')
 								cur.execute(SQL_dist, (gid, ))
 								poly_results = cur.fetchall()
@@ -628,7 +631,12 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, cur,
 								print "@!@!@!@!@ More than one match found in gazet, error in gazet resolve logic @!@!@!@!@"
 								#print gazet_entry
 						else:
-							predictions.append([toporef[j][0], xml_file, j, "TOPO_ESTIMATE", tbl, i[0], toporef2[j], lat_long_lookup[i[0]][0], lat_long_lookup[i[0]][1] ] )
+							method = "TOPO_ESTIMATE"
+							gid = i[0]
+							name = topobase
+							tbl = u"N/A"
+							centroid_lat = lat_long_lookup[i[0]][0]
+							centroid_long = lat_long_lookup[i[0]][1]
 						SQL_Point_Dist = "SELECT ST_Distance(ST_GeographyFromText('SRID=4326;POINT(%s %s)'),ST_GeographyFromText('SRID=4326;POINT(%s %s)'));" % (gold_long, gold_lat, rank_dict[i[0]][2][1], rank_dict[i[0]][2][0])
 						cur.execute(SQL_Point_Dist, ())
 						point_results = cur.fetchall()
@@ -645,18 +653,25 @@ def VectorSumNER(wordref, toporef, topoall, wordref2, toporef2, total_topo, cur,
 						point_dist_list.append(pointdist)
 						poly_dist_list.append(polydist)
 
+						poly_cor = "0"
+						point_cor = "0"
+
 						if pointdist <= 161.0:
 							point_total_correct += 1
 							point_ner_tp += 1
+							point_cor = "1"
 						else:
 							point_incorrect += 1 
 							point_ner_fp += 1
 						if polydist <= 161.0:
 							poly_total_correct += 1
+							poly_cor = "1"
 							poly_ner_tp += 1
 						else: 
 							poly_ner_fp += 1
 							poly_incorrect += 1
+
+						predictions.append([toporef[j][0], xml_file, j, method, tbl, gid, name, centroid_lat, centroid_long, pointdist, polydist, point_cor, poly_cor] )
 
 						point_error += pointdist
 						poly_error += polydist
